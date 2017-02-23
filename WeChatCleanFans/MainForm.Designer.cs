@@ -102,7 +102,7 @@
             this.rtbContent.Name = "rtbContent";
             this.rtbContent.Size = new System.Drawing.Size(373, 68);
             this.rtbContent.TabIndex = 5;
-            this.rtbContent.Text = "清理测试中";
+            this.rtbContent.Text = "";
             this.rtbContent.MouseDown += new System.Windows.Forms.MouseEventHandler(this.MainForm_MouseDown);
             this.rtbContent.MouseMove += new System.Windows.Forms.MouseEventHandler(this.MainForm_MouseMove);
             this.rtbContent.MouseUp += new System.Windows.Forms.MouseEventHandler(this.MainForm_MouseUp);

@@ -30,7 +30,7 @@ namespace WeChatCleanFans
         /// </summary>
         private WFriendsList _chat2friend;
 
-        private WFriendsList _waitCleanfriend;
+        //private WFriendsList _waitCleanfriend;
 
         private List<object> _contact_all = new List<object>();
         private List<object> _contact_latest = new List<object>();
@@ -54,10 +54,10 @@ namespace WeChatCleanFans
             Controls.Add(_chat2friend);
 
 
-            _waitCleanfriend = new WFriendsList();
-            _waitCleanfriend.Dock = DockStyle.Fill;
-            _waitCleanfriend.Visible = false;
-            Controls.Add(_waitCleanfriend);
+            //_waitCleanfriend = new WFriendsList();
+            //_waitCleanfriend.Dock = DockStyle.Fill;
+            //_waitCleanfriend.Visible = false;
+            //Controls.Add(_waitCleanfriend);
 
 
             _lblWait = new Label();
@@ -165,11 +165,9 @@ namespace WeChatCleanFans
 
                 this.BeginInvoke((Action)(delegate ()  //等待结束
                 {
-                    _lblWait.Visible = false;
-
-                    //wChatList1.Items.AddRange(_contact_latest.ToArray());  //近期联系人
+                    _lblWait.Visible = false;                    
                     wFriendsList1.Items.AddRange(_contact_all.ToArray());  //通讯录
-                    // wpersonalinfo.FriendUser = _me;
+                    
                 }));
 
 
@@ -195,22 +193,17 @@ namespace WeChatCleanFans
                                     string from = m["FromUserName"].ToString();
                                     string to = m["ToUserName"].ToString();
                                     string content = m["Content"].ToString();
-
                                     string type = m["MsgType"].ToString();
-
                                     if (type == "10000")
                                     {
-                                        if (content.Contains("开启了朋友验证"))
+                                        if (content.Contains("开启了朋友验证")|| content.Contains("消息已发出，但被对方拒收"))
                                         {
                                             WXUser user = SendResult.Find(item =>
                                              {
                                                  return item.UserName == from;
                                              });
                                             if (user != null)
-                                            {
-                                                //user.ShowPinYin = "";
-                                                //List<object> wait_clean = new List<object>();
-                                                //wait_clean.Add(user);
+                                            {                                                
                                                 this.BeginInvoke((Action)(delegate ()  //等待结束
                                                 {
                                                     wFriendsList2.Items.Add(user);
@@ -219,8 +212,6 @@ namespace WeChatCleanFans
 
                                         }
                                     }
-
-
                                 }
                             }
                         }
@@ -245,7 +236,8 @@ namespace WeChatCleanFans
         private bool isStart = false;
         private void btnStartCleanFans_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(rtbContent.Text) && !isStart)
+            wFriendsList2.Items.Clear();
+            if (!isStart)
             {
                 string Msg = rtbContent.Text;
                 isStart = true;
@@ -253,7 +245,7 @@ namespace WeChatCleanFans
                 btnStartCleanFans.Text = "正在扫描中";
                 btnStartCleanFans.Enabled = false;
                 wFriendsList2.Items.Add("");
-                ((Action)(delegate ()
+                 ((Action)(delegate ()
                 {
                     SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 开始扫描僵尸粉..." + "\r\n");
                     foreach (var item in contact_all)
@@ -276,6 +268,7 @@ namespace WeChatCleanFans
 
                         }
                         SetText("ok." + "\r\n");
+                        System.Threading.Thread.Sleep(2000);
                     }
                     SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 扫描完成." + "\r\n");
                     isStart = false;

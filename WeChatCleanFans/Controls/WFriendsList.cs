@@ -81,7 +81,7 @@ namespace WeChatCleanFans.Controls
                         if (!string.IsNullOrEmpty(Items[i].ToString()))
                         {
                             e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(150, Color.Gray)), bound);
-                            e.Graphics.DrawString(Items[i].ToString(), f, Brushes.Black, new PointF(bound.X + 10, bound.Y + 3));
+                            e.Graphics.DrawString(i == 0 ? "" : Items[i].ToString(), f, Brushes.Black, new PointF(bound.X + 10, bound.Y + 3));
                         }
                     }
                 }
