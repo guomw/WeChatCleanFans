@@ -165,9 +165,9 @@ namespace WeChatCleanFans
 
                 this.BeginInvoke((Action)(delegate ()  //等待结束
                 {
-                    _lblWait.Visible = false;                    
+                    _lblWait.Visible = false;
                     wFriendsList1.Items.AddRange(_contact_all.ToArray());  //通讯录
-                    
+
                 }));
 
 
@@ -196,14 +196,14 @@ namespace WeChatCleanFans
                                     string type = m["MsgType"].ToString();
                                     if (type == "10000")
                                     {
-                                        if (content.Contains("开启了朋友验证")|| content.Contains("消息已发出，但被对方拒收"))
+                                        if (content.Contains("开启了朋友验证") || content.Contains("消息已发出，但被对方拒收"))
                                         {
                                             WXUser user = SendResult.Find(item =>
                                              {
                                                  return item.UserName == from;
                                              });
                                             if (user != null)
-                                            {                                                
+                                            {
                                                 this.BeginInvoke((Action)(delegate ()  //等待结束
                                                 {
                                                     wFriendsList2.Items.Add(user);
@@ -245,41 +245,36 @@ namespace WeChatCleanFans
                 btnStartCleanFans.Text = "正在扫描中";
                 btnStartCleanFans.Enabled = false;
                 wFriendsList2.Items.Add("");
-                 ((Action)(delegate ()
-                {
-                    SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 开始扫描僵尸粉..." + "\r\n");
-                    foreach (var item in contact_all)
-                    {
-                        WXUser _friendUser = item as WXUser;
+                ((Action)(delegate ()
+               {
+                   SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 开始扫描僵尸粉..." + "\r\n");
+                   foreach (var item in contact_all)
+                   {
+                       WXUser _friendUser = item as WXUser;
 
-                        SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 正在扫描【" + _friendUser.ShowName + "】...");
-
-                        if (_friendUser.NickName == "天猫券小云")
-                        {
-                            WXMsg msg = new WXMsg();
-                            msg.From = _me.UserName;
-                            msg.Msg = Msg;
-                            msg.Readed = false;
-                            msg.To = _friendUser.UserName;
-                            msg.Type = 1;
-                            msg.Time = DateTime.Now;
-                            SendResult.Add(_friendUser);
-                            _friendUser.SendMsg(msg, false);
-
-                        }
-                        SetText("ok." + "\r\n");
-                        System.Threading.Thread.Sleep(2000);
-                    }
-                    SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 扫描完成." + "\r\n");
-                    isStart = false;
+                       SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 正在扫描【" + _friendUser.ShowName + "】...");
+                       WXMsg msg = new WXMsg();
+                       msg.From = _me.UserName;
+                       msg.Msg = Msg;
+                       msg.Readed = false;
+                       msg.To = _friendUser.UserName;
+                       msg.Type = 1;
+                       msg.Time = DateTime.Now;
+                       SendResult.Add(_friendUser);
+                       _friendUser.SendMsg(msg, false);
+                       SetText("ok." + "\r\n");
+                       System.Threading.Thread.Sleep(2000);
+                   }
+                   SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 扫描完成." + "\r\n");
+                   isStart = false;
 
 
-                    this.BeginInvoke((Action)(delegate ()  //等待结束
-                    {
-                        btnStartCleanFans.Text = "开始扫描僵尸粉";
-                        btnStartCleanFans.Enabled = true;
-                    }));
-                })).BeginInvoke(null, null);
+                   this.BeginInvoke((Action)(delegate ()  //等待结束
+                   {
+                       btnStartCleanFans.Text = "开始扫描僵尸粉";
+                       btnStartCleanFans.Enabled = true;
+                   }));
+               })).BeginInvoke(null, null);
 
 
             }
