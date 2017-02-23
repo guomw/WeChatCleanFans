@@ -4,6 +4,7 @@ using System.Text;
 using System.Net;
 using System.IO;
 using System.Collections;
+using System.Net.Http;
 
 namespace WwChatHttpCore.HTTP
 {
@@ -15,7 +16,18 @@ namespace WwChatHttpCore.HTTP
         /// <summary>
         /// 访问服务器时的cookies
         /// </summary>
-        public static CookieContainer CookiesContainer;
+        public static readonly CookieContainer CookiesContainer = new CookieContainer();
+        private static readonly HttpClientHandler clientHandler = new HttpClientHandler();
+        /// <summary>
+        /// HTTP请求发送者
+        /// </summary>
+        private static readonly HttpClient client = new HttpClient(clientHandler);
+
+        static BaseService()
+        {
+            clientHandler.CookieContainer = CookiesContainer;
+        }
+        
         /// <summary>
         /// 向服务器发送get请求  返回服务器回复数据
         /// </summary>
@@ -25,30 +37,7 @@ namespace WwChatHttpCore.HTTP
         {
             try
             {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                request.Method = "get";
-
-                if (CookiesContainer == null)
-                {
-                    CookiesContainer = new CookieContainer();
-                }
-
-                request.CookieContainer = CookiesContainer;  //启用cookie
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                Stream response_stream = response.GetResponseStream();
-
-                int count = (int)response.ContentLength;
-                int offset = 0;
-                byte[] buf = new byte[count];
-                while (count > 0)  //读取返回数据
-                {
-                    int n = response_stream.Read(buf, offset, count);
-                    if (n == 0) break;
-                    count -= n;
-                    offset += n;
-                }
-                return buf;
+                return client.GetByteArrayAsync(url).Result;
             }
             catch
             {
@@ -66,35 +55,8 @@ namespace WwChatHttpCore.HTTP
             try
             {
                 byte[] request_body = Encoding.UTF8.GetBytes(body);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                request.Method = "post";
-                request.ContentLength = request_body.Length;
-
-                Stream request_stream = request.GetRequestStream();
-
-                request_stream.Write(request_body, 0, request_body.Length);
-
-                if (CookiesContainer == null)
-                {
-                    CookiesContainer = new CookieContainer();
-                }
-                request.CookieContainer = CookiesContainer;  //启用cookie
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                Stream response_stream = response.GetResponseStream();
-
-                int count = (int)response.ContentLength;
-                int offset = 0;
-                byte[] buf = new byte[count];
-                while (count > 0)  //读取返回数据
-                {
-                    int n = response_stream.Read(buf, offset, count);
-                    if (n == 0) break;
-                    count -= n;
-                    offset += n;
-                }
-                return buf;
+                ByteArrayContent content = new ByteArrayContent(request_body);
+                return client.PostAsync(url, content).Result.Content.ReadAsByteArrayAsync().Result;
             }
             catch
             {
@@ -107,23 +69,7 @@ namespace WwChatHttpCore.HTTP
         {
             try
             {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                request.Method = "get";
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                Stream response_stream = response.GetResponseStream();
-
-                int count = (int)response.ContentLength;
-                int offset = 0;
-                byte[] buf = new byte[count];
-                while (count > 0)  //读取返回数据
-                {
-                    int n = response_stream.Read(buf, offset, count);
-                    if (n == 0) break;
-                    count -= n;
-                    offset += n;
-                }
-                return buf;
+                return SendGetRequest(url);
             }
             catch
             {
@@ -136,72 +82,27 @@ namespace WwChatHttpCore.HTTP
         {
             try
             {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                request.Method = "post";
-                //if(header!=null)
-                //{
-                //    request.Headers = header;
-                //}
-                // 边界符
-                var boundary = "---------------" + DateTime.Now.Ticks.ToString("x");
-                //结尾
-                byte[] foot_data = Encoding.UTF8.GetBytes("\r\n" + boundary + "--");
+                MultipartFormDataContent allContent = new MultipartFormDataContent();
 
-                request.ContentType = "multipart/form-data; boundary=" + boundary;
-
-                //request.Headers.Add("", "");
-
-
-                StringBuilder sb2 = new StringBuilder();
                 foreach (var key in header.AllKeys)
                 {
                     if (key != "filename")
                     {
-                        sb2.Append("\r\n" + boundary + "\r\n");
-                        sb2.Append("Content-Disposition: form-data; name=\"" + key + "\"\r\n\r\n\"" + header.Get(key) + "\"");
+                        allContent.Add(new StringContent(header.Get(key)), key);
                     }
                     else
                     {
-                        sb2.Append("\r\n" + boundary + "\r\n");
-                        sb2.Append("Content-Disposition: form-data; name=\"" + key + "\"\r\n; filename=\"" + header.Get(key) + "\"\r\n");
-                        sb2.Append("Content-Type:image/jpeg\r\n\r\n");
+                        ByteArrayContent part = new ByteArrayContent(request_body);
+                        part.Headers.ContentType.MediaType = "image/jpeg";
+                        allContent.Add(part, key, header.Get(key));
                     }
 
                 }
-                byte[] form_data = Encoding.UTF8.GetBytes(sb2.ToString());
-                request.ContentLength = form_data.Length + request_body.Length + foot_data.Length;
 
-                Stream request_stream = request.GetRequestStream();
-
-                request_stream.Write(form_data, 0, form_data.Length);
-
-                request_stream.Write(request_body, 0, request_body.Length);
-                ////结尾
-                request_stream.Write(foot_data, 0, foot_data.Length);
-
-                if (CookiesContainer == null)
-                {
-                    CookiesContainer = new CookieContainer();
-                }
-                request.CookieContainer = CookiesContainer;  //启用cookie
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                Stream response_stream = response.GetResponseStream();
-
-                StreamReader sr = new StreamReader(response_stream, Encoding.UTF8);
-                string responseContent = sr.ReadToEnd().Trim();
-
-                int count = (int)response.ContentLength;
-                int offset = 0;
-                byte[] buf = new byte[count];
-                while (count > 0)  //读取返回数据
-                {
-                    int n = response_stream.Read(buf, offset, count);
-                    if (n == 0) break;
-                    count -= n;
-                    offset += n;
-                }
-                return buf;
+                return client.PostAsync(url, allContent).Result.
+                    Content.
+                    ReadAsByteArrayAsync()
+                    .Result;
             }
             catch (Exception ex)
             {
@@ -209,11 +110,33 @@ namespace WwChatHttpCore.HTTP
             }
         }
 
+        /// <summary>
+        /// 上传文件
+        /// </summary>
+        /// <param name="url">提交的目标</param>
+        /// <param name="fileName">上传时告知服务端的文件名称</param>
+        /// <param name="contentType">该文件的MIMEType 比如image/png</param>
+        /// <param name="content">文件内容</param>
+        /// <returns></returns>
+        public static byte[] UploadMedia(string url,string fileName,string contentType,byte[] content)
+        {
+            MultipartFormDataContent allConent = new MultipartFormDataContent();
+            ByteArrayContent fileContent = new ByteArrayContent(content);
+            fileContent.Headers.ContentType.MediaType = contentType;
+            fileContent.Headers.ContentDisposition.FileName = fileName;
+            fileContent.Headers.ContentDisposition.Name = "filename";
+            allConent.Add(fileContent, "filename", fileName);
+
+            return client.PostAsync(url, allConent).Result.
+                   Content.
+                   ReadAsByteArrayAsync()
+                   .Result;
+        }
 
         public static byte[] MediaUpload(string url, string fileName, byte[] buffer, string contentType)
         {
             try
-            {
+            {   
                 //BinaryReader br = new BinaryReader(fileStream);
                 //                byte[] buffer = br.ReadBytes(Convert.ToInt32(fileStream.Length));
 
@@ -313,7 +236,7 @@ namespace WwChatHttpCore.HTTP
             return null;
         }
 
-        private static List<Cookie> GetAllCookies(CookieContainer cc)
+        public static List<Cookie> GetAllCookies(CookieContainer cc)
         {
             List<Cookie> lstCookies = new List<Cookie>();
 

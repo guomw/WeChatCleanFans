@@ -44,6 +44,7 @@ namespace WwChatHttpCore.HTTP
         /// </summary>
         private static string _uploadmedia = "https://file.wx8.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json";
 
+        private JObject initData;
         /// <summary>
         /// 微信初始化
         /// </summary>
@@ -61,11 +62,14 @@ namespace WwChatHttpCore.HTTP
                 string init_str = Encoding.UTF8.GetString(bytes);
 
                 JObject init_result = JsonConvert.DeserializeObject(init_str) as JObject;
+                if (init_result["BaseResponse"]["Ret"].ToObject<int>() > 0)
+                    throw new Exceptions.LoginRequiredException();
 
                 foreach (JObject synckey in init_result["SyncKey"]["List"])  //同步键值
                 {
                     _syncKey.Add(synckey["Key"].ToString(), synckey["Val"].ToString());
                 }
+                initData = init_result;
                 return init_result;
             }
             else
@@ -73,6 +77,54 @@ namespace WwChatHttpCore.HTTP
                 return null;
             }
         }
+
+        /// <summary>
+        /// 发送文本消息到指定昵称
+        /// </summary>
+        /// <param name="nickName">收到消息者的昵称</param>
+        /// <param name="message">消息内容</param>
+        public void SendTextMessageToNickName(string nickName, string message)
+        {
+            SendTextMessageToUserName(toUserName(nickName), message);
+        }
+
+        /// <summary>
+        /// 将昵称转变成userName
+        /// </summary>
+        /// <param name="nickName">昵称</param>
+        /// <returns>userName, null 如果找不到这个昵称</returns>
+        private string toUserName(string nickName)
+        {
+            if (contactsList == null)
+                GetContact();
+            foreach (JObject contact in contactsList["MemberList"])
+            {
+                if (contact["NickName"].ToString() == nickName)
+                {
+                    return contact["UserName"].ToString();
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 发送文本消息到指定用户
+        /// </summary>
+        /// <param name="userName">收到消息者的昵称</param>
+        /// <param name="message">消息内容</param>
+        public void SendTextMessageToUserName(string userName, string message)
+        {
+            String from = myUserName();
+            SendMsg(message, from, userName, 1);
+        }
+
+        private string myUserName()
+        {
+            if (initData == null)
+                WxInit();
+            return initData["User"]["UserName"].ToString();
+        }
+
         /// <summary>
         /// 获取好友头像
         /// </summary>
@@ -96,6 +148,7 @@ namespace WwChatHttpCore.HTTP
 
             return Image.FromStream(new MemoryStream(bytes));
         }
+        private JObject contactsList;
         /// <summary>
         /// 获取好友列表
         /// </summary>
@@ -104,8 +157,8 @@ namespace WwChatHttpCore.HTTP
         {
             byte[] bytes = BaseService.SendGetRequest(_getcontact_url);
             string contact_str = Encoding.UTF8.GetString(bytes);
-
-            return JsonConvert.DeserializeObject(contact_str) as JObject;
+            contactsList = JsonConvert.DeserializeObject(contact_str) as JObject;
+            return contactsList;
         }
         /// <summary>
         /// 微信同步检测
