@@ -5,6 +5,7 @@ using System.Net;
 using System.IO;
 using System.Collections;
 using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace WwChatHttpCore.HTTP
 {
@@ -27,7 +28,7 @@ namespace WwChatHttpCore.HTTP
         {
             clientHandler.CookieContainer = CookiesContainer;
         }
-        
+
         /// <summary>
         /// 向服务器发送get请求  返回服务器回复数据
         /// </summary>
@@ -82,21 +83,17 @@ namespace WwChatHttpCore.HTTP
         {
             try
             {
-                MultipartFormDataContent allContent = new MultipartFormDataContent();
-
+                var boundary = "------WebKitFormBoundary" + DateTime.Now.Ticks.ToString("x");
+                MultipartFormDataContent allContent = new MultipartFormDataContent(boundary);
                 foreach (var key in header.AllKeys)
                 {
-                    if (key != "filename")
-                    {
-                        allContent.Add(new StringContent(header.Get(key)), key);
-                    }
-                    else
+                    allContent.Add(new StringContent(header.Get(key)), key);
+                    if (key == "filename")
                     {
                         ByteArrayContent part = new ByteArrayContent(request_body);
-                        part.Headers.ContentType.MediaType = "image/jpeg";
+                        part.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
                         allContent.Add(part, key, header.Get(key));
                     }
-
                 }
 
                 return client.PostAsync(url, allContent).Result.
@@ -118,7 +115,7 @@ namespace WwChatHttpCore.HTTP
         /// <param name="contentType">该文件的MIMEType 比如image/png</param>
         /// <param name="content">文件内容</param>
         /// <returns></returns>
-        public static byte[] UploadMedia(string url,string fileName,string contentType,byte[] content)
+        public static byte[] UploadMedia(string url, string fileName, string contentType, byte[] content)
         {
             MultipartFormDataContent allConent = new MultipartFormDataContent();
             ByteArrayContent fileContent = new ByteArrayContent(content);
@@ -136,7 +133,7 @@ namespace WwChatHttpCore.HTTP
         public static byte[] MediaUpload(string url, string fileName, byte[] buffer, string contentType)
         {
             try
-            {   
+            {
                 //BinaryReader br = new BinaryReader(fileStream);
                 //                byte[] buffer = br.ReadBytes(Convert.ToInt32(fileStream.Length));
 

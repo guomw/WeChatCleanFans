@@ -267,7 +267,7 @@ namespace WwChatHttpCore.Objects
 
                 wxs.uploadMedia("http://img01.taobaocdn.com/bao/uploaded/i1/TB1wz_KOXXXXXbBapXXXXXXXXXX_!!0-item_pic.jpg", msg.To, msg.From);
 
-
+                
             }
 
             _sentMsg.Add(msg.Time, msg);

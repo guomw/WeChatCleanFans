@@ -39,6 +39,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
+            this.btnSendImgTest = new System.Windows.Forms.Button();
             this.wFriendsList2 = new WeChatCleanFans.Controls.WFriendsList();
             this.wFriendsList1 = new WeChatCleanFans.Controls.WFriendsList();
             this.panel1.SuspendLayout();
@@ -86,9 +87,9 @@
             this.btnStartCleanFans.BackColor = System.Drawing.Color.DodgerBlue;
             this.btnStartCleanFans.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnStartCleanFans.ForeColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.btnStartCleanFans.Location = new System.Drawing.Point(722, 34);
+            this.btnStartCleanFans.Location = new System.Drawing.Point(636, 34);
             this.btnStartCleanFans.Name = "btnStartCleanFans";
-            this.btnStartCleanFans.Size = new System.Drawing.Size(149, 68);
+            this.btnStartCleanFans.Size = new System.Drawing.Size(110, 68);
             this.btnStartCleanFans.TabIndex = 2;
             this.btnStartCleanFans.Text = "开始扫描僵尸粉";
             this.btnStartCleanFans.UseVisualStyleBackColor = false;
@@ -100,7 +101,7 @@
             this.rtbContent.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.rtbContent.Location = new System.Drawing.Point(327, 34);
             this.rtbContent.Name = "rtbContent";
-            this.rtbContent.Size = new System.Drawing.Size(373, 68);
+            this.rtbContent.Size = new System.Drawing.Size(307, 68);
             this.rtbContent.TabIndex = 5;
             this.rtbContent.Text = "";
             this.rtbContent.MouseDown += new System.Windows.Forms.MouseEventHandler(this.MainForm_MouseDown);
@@ -160,6 +161,19 @@
             this.label3.TabIndex = 10;
             this.label3.Text = "僵尸粉列表：";
             // 
+            // btnSendImgTest
+            // 
+            this.btnSendImgTest.BackColor = System.Drawing.Color.DodgerBlue;
+            this.btnSendImgTest.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSendImgTest.ForeColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.btnSendImgTest.Location = new System.Drawing.Point(752, 34);
+            this.btnSendImgTest.Name = "btnSendImgTest";
+            this.btnSendImgTest.Size = new System.Drawing.Size(110, 68);
+            this.btnSendImgTest.TabIndex = 2;
+            this.btnSendImgTest.Text = "发送图片";
+            this.btnSendImgTest.UseVisualStyleBackColor = false;
+            this.btnSendImgTest.Click += new System.EventHandler(this.btnSendImgTest_Click);
+            // 
             // wFriendsList2
             // 
             this.wFriendsList2.BackColor = System.Drawing.SystemColors.MenuBar;
@@ -203,6 +217,7 @@
             this.Controls.Add(this.wFriendsList2);
             this.Controls.Add(this.rtbContent);
             this.Controls.Add(this.pbClose);
+            this.Controls.Add(this.btnSendImgTest);
             this.Controls.Add(this.btnStartCleanFans);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.wFriendsList1);
@@ -239,5 +254,6 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Button btnSendImgTest;
     }
 }

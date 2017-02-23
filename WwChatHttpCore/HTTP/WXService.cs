@@ -21,28 +21,37 @@ namespace WwChatHttpCore.HTTP
         private static Dictionary<string, string> _syncKey = new Dictionary<string, string>();
 
         //微信初始化url
-        private static string _init_url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=1377482058764";
+        private static string _init_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=";
         //获取好友头像
-        private static string _geticon_url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgeticon?username=";
+        private static string _geticon_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgeticon?username=";
         //获取群聊（组）头像
-        private static string _getheadimg_url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetheadimg?username=";
+        private static string _getheadimg_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetheadimg?username=";
         //获取好友列表
-        private static string _getcontact_url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact";
+        private static string _getcontact_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact";
         //同步检查url
         private static string _synccheck_url = "https://webpush.weixin.qq.com/cgi-bin/mmwebwx-bin/synccheck?sid={0}&uin={1}&synckey={2}&r={3}&skey={4}&deviceid={5}";
         //同步url
-        private static string _sync_url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=";
+        private static string _sync_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=";
         //发送消息url
-        private static string _sendmsg_url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?sid=";
+        private static string _sendmsg_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?sid=";
+
+        /// <summary>
+        /// 发图片消息url
+        /// </summary>
+        private static string _sendimgmsg_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&lang=zh_CN";
+
+
+        ///private static string _sendImg = "http://120.24.54.54/api/user/uploadimg/";
+
         /// <summary>
         /// 
         /// </summary>
-        private static string _createchatroom_url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxcreatechatroom";
+        private static string _createchatroom_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxcreatechatroom";
 
         /// <summary>
         /// 上传媒体
         /// </summary>
-        private static string _uploadmedia = "https://file.wx8.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json";
+        private static string _uploadmedia = "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json";
 
         private JObject initData;
         /// <summary>
@@ -51,14 +60,14 @@ namespace WwChatHttpCore.HTTP
         /// <returns></returns>
         public JObject WxInit()
         {
-            string init_json = "{{\"BaseRequest\":{{\"Uin\":\"{0}\",\"Sid\":\"{1}\",\"Skey\":\"\",\"DeviceID\":\"e1615250492\"}}}}";
+            string init_json = "{{\"BaseRequest\":{{\"Uin\":\"{0}\",\"Sid\":\"{1}\",\"Skey\":\"{3}\",\"DeviceID\":\"{2}\"}}}}";
             Cookie sid = BaseService.GetCookie("wxsid");
             Cookie uin = BaseService.GetCookie("wxuin");
 
             if (sid != null && uin != null)
             {
-                init_json = string.Format(init_json, uin.Value, sid.Value);
-                byte[] bytes = BaseService.SendPostRequest(_init_url + "&pass_ticket=" + LoginService.Pass_Ticket, init_json);
+                init_json = string.Format(init_json, uin.Value, sid.Value, GetDeviceID(), LoginService.SKey);
+                byte[] bytes = BaseService.SendPostRequest(_init_url+getClientMsgId() + "&pass_ticket=" + LoginService.Pass_Ticket, init_json);
                 string init_str = Encoding.UTF8.GetString(bytes);
 
                 JObject init_result = JsonConvert.DeserializeObject(init_str) as JObject;
@@ -277,6 +286,55 @@ namespace WwChatHttpCore.HTTP
 
 
 
+
+
+        /// <summary>
+        /// 发图片
+        /// </summary>
+        /// <param name="mediaId">The media identifier.</param>
+        /// <param name="from">From.</param>
+        /// <param name="to">To.</param>
+        public void SendPic(string mediaId, string from, string to)
+        {
+            string msg_json = "{{" +
+            "\"BaseRequest\":{{" +
+                "\"DeviceID\" : \"{0}\"," +
+                "\"Sid\" : \"{1}\"," +
+                "\"Skey\" : \"{2}\"," +
+                "\"Uin\" : \"{3}\"" +
+            "}}," +
+            "\"Scene\":0," +
+            "\"Msg\" : {{" +
+                "\"Type\" : {4}," +
+                "\"MediaId\" : \"{5}\"," +
+                "\"FromUserName\" : \"{6}\"," +
+                "\"LocalID\" : {7}," +
+                "\"ToUserName\" : \"{8}\"," +
+                "\"ClientMsgId\" : {9}" +
+            "}}" +
+            "}}";
+
+            Cookie sid = BaseService.GetCookie("wxsid");
+            Cookie uin = BaseService.GetCookie("wxuin");
+
+            if (sid != null && uin != null)
+            {
+                msg_json = string.Format(msg_json, GetDeviceID(), sid.Value, LoginService.SKey, uin.Value, 3, mediaId, from, getClientMsgId(), to, getClientMsgId());
+
+                byte[] bytes = BaseService.SendPostRequest(_sendimgmsg_url + "&pass_ticket=" + LoginService.Pass_Ticket, msg_json);
+
+                string send_result = Encoding.UTF8.GetString(bytes);
+            }
+        }
+
+
+
+
+        /// <summary>
+        /// 群里踢人
+        /// </summary>
+        /// <param name="from">From.</param>
+        /// <param name="to">To.</param>
         public void DeleteChatroom(string from, string to)
         {
             string msg_json = "{{" +
@@ -312,7 +370,12 @@ namespace WwChatHttpCore.HTTP
             Cookie wdt = BaseService.GetCookie("webwx_data_ticket");
             Cookie sid = BaseService.GetCookie("wxsid");
             Cookie uin = BaseService.GetCookie("wxuin");
-            byte[] data = BaseService.GetImageStream(url);
+
+            string pPath = @"C:\Users\guomw\Pictures\1234.png";
+            FileInfo fi = new FileInfo(pPath);
+            byte[] data = imageToByteArray(pPath);
+
+            //byte[] data = BaseService.GetImageStream(url);
 
             uploadMediaRequestModel uploadmediarequest = new uploadMediaRequestModel();
             uploadmediarequest.BaseRequest = new WxBaseRequestModel()
@@ -320,9 +383,9 @@ namespace WwChatHttpCore.HTTP
                 Uin = uin.Value,
                 Sid = sid.Value,
                 Skey = LoginService.SKey,
-                DeviceID = "e441551176"
+                DeviceID = GetDeviceID()
             };
-            uploadmediarequest.ClientMediaId = ((long)(DateTime.Now.ToUniversalTime() - new System.DateTime(1970, 1, 1)).TotalMilliseconds).ToString();
+            uploadmediarequest.ClientMediaId = getClientMsgId().ToString();
             uploadmediarequest.TotalLen = data.Length.ToString();
             uploadmediarequest.StartPos = "0";
             uploadmediarequest.DataLen = data.Length.ToString();
@@ -333,19 +396,61 @@ namespace WwChatHttpCore.HTTP
             uploadmediarequest.FileMd5 = MD5(Encoding.UTF8.GetString(data));
 
             string udr = JsonConvert.SerializeObject(uploadmediarequest);
+            string clientId = "1234";// getClientMsgId().ToString();
             WebHeaderCollection header = new WebHeaderCollection();
-            header.Add("id", "WU_FILE_1");
-            header.Add("name", "alsdjfasld.jpg");
+            header.Add("name", clientId + ".jpg");
             header.Add("type", "image/jpeg");
             header.Add("lastModifiedDate", ToGMTFormat(DateTime.Now));
             header.Add("size", data.Length.ToString());
             header.Add("mediatype", "pic");
             header.Add("uploadmediarequest", udr);
             header.Add("webwx_data_ticket", wdt.Value);
-            header.Add("pass_ticket", HttpUtility.UrlEncode(LoginService.Pass_Ticket));
-            header.Add("filename", "alsdjfasld.jpg");
+            header.Add("pass_ticket", null);
+            header.Add("filename", clientId + ".jpg");
             byte[] bytes = BaseService.SendPostRequest(_uploadmedia, data, header);
             string send_result = Encoding.UTF8.GetString(bytes);
+
+            /**
+             * 
+             
+
+            {
+                "BaseResponse": {
+                "Ret": 0,
+                "ErrMsg": ""
+                }
+                ,
+                "MediaId": "axxxxxxx",
+                "StartPos": 0,
+                "CDNThumbImgHeight": 0,
+                "CDNThumbImgWidth": 0
+            }
+             * 
+             * ***/
+        }
+
+
+        /// <summary>
+        /// 图片转为Byte字节数组
+        /// </summary>
+        /// <param name="FilePath">路径</param>
+        /// <returns>字节数组</returns>
+        private byte[] imageToByteArray(string FilePath)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
+
+                using (Image imageIn = Image.FromFile(FilePath))
+                {
+
+                    using (Bitmap bmp = new Bitmap(imageIn))
+                    {
+                        bmp.Save(ms, imageIn.RawFormat);
+                    }
+
+                }
+                return ms.ToArray();
+            }
         }
 
         /// <summary>  
@@ -354,6 +459,35 @@ namespace WwChatHttpCore.HTTP
         public static string ToGMTFormat(DateTime dt)
         {
             return dt.ToString("r") + dt.ToString("zzz").Replace(":", "");
+        }
+
+        /// <summary>
+        /// 生成指定位随机数
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public static string CreateCheckCodeWithNum(int n)
+        {
+            char[] CharArray = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+            string sCode = "";
+            Random random = new Random(Guid.NewGuid().GetHashCode());
+            for (int i = 0; i < n; i++)
+            {
+                sCode += CharArray[random.Next(CharArray.Length)];
+            }
+            return sCode;
+        }
+
+        public static string GetDeviceID()
+        {
+            return "e" + CreateCheckCodeWithNum(15);
+        }
+
+
+        public static long getClientMsgId()
+        {
+            System.DateTime startTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1));
+            return (long)(DateTime.Now - startTime).TotalMilliseconds;
         }
 
         public static string MD5(string str)
