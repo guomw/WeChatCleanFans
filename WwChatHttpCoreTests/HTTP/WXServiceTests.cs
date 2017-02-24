@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using System.IO;
 
 namespace WwChatHttpCore.HTTP.Tests
 {
@@ -17,16 +18,17 @@ namespace WwChatHttpCore.HTTP.Tests
 //        测试名称: GetQRCodeTest
 //测试结果:	已通过
 //结果 的标准输出:
-            LoginService._session_id = "QdrMLKl8Wg==";
-            LoginService.Pass_Ticket = "OsD07ynIzcYgPqjM9a68rucmpd0fAZigB4UOQNfPQl4%3D";
-            LoginService.SKey = "@crypt_e4421859_efa52fd7e12f9602590a3ce77c304fcd";
-            BaseService.CookiesContainer.Add(new System.Net.Cookie("wxuin", "185257400", "/", "wx.qq.com"));
-            BaseService.CookiesContainer.Add(new System.Net.Cookie("wxsid", "rtmZey+R/5/4K7DN", "/", "wx.qq.com"));
-            BaseService.CookiesContainer.Add(new System.Net.Cookie("wxloadtime", "1487843432", "/", "wx.qq.com"));
-            BaseService.CookiesContainer.Add(new System.Net.Cookie("mm_lang", "zh_CN", "/", "wx.qq.com"));
-            BaseService.CookiesContainer.Add(new System.Net.Cookie("webwxuvid", "899e8a61e831fabab1a590dbde8f188748d0aa0b3b603249fbd579e28fb32a8caf1fc3b5f287792ee020df8893644c13", "/", "wx.qq.com"));
-            BaseService.CookiesContainer.Add(new System.Net.Cookie("webwx_auth_ticket", "CIsBEIabkIYFGoABkOag2OgJ7cX34rE2nJDBCg7EBylhvbLffr1x7g2hOC1+M5Ff9VRR48EyQjN3rYyOFTBvzZ3+gGE9GlkEydxuGkUdrQ/oiHGs4Tts7ioKNHN7qS1SG507f8eMkO5888ndc6o1+xXhDmVi4Ed1OzdD7rJRJncI8/PEQShigcjC6xY=", "/", "wx.qq.com"));
-            BaseService.CookiesContainer.Add(new System.Net.Cookie("webwx_data_ticket", "gScxU5X+DISs5bjlJIx9BW4c", "/", ".qq.com"));
+            LoginService._session_id = "ocpfmgvDQw==";
+            LoginService.Pass_Ticket = "8OBmLQI7B1udpM7E4w08vIGUI8rJEhuuYi6GWc78mPY%3D";
+            LoginService.SKey = "@crypt_e4421859_ba12173f2a00aadcd3025b44ea18fc3f";
+            BaseService.CookiesContainer.Add(new System.Net.Cookie("wxuin", "185257400", "/", ".qq.com"));
+            BaseService.CookiesContainer.Add(new System.Net.Cookie("wxsid", "XVSlokdJQJioplaD", "/", ".qq.com"));
+            BaseService.CookiesContainer.Add(new System.Net.Cookie("wxloadtime", "1487908917", "/", ".qq.com"));
+            BaseService.CookiesContainer.Add(new System.Net.Cookie("mm_lang", "zh_CN", "/", ".qq.com"));
+            BaseService.CookiesContainer.Add(new System.Net.Cookie("webwxuvid", "899e8a61e831fabab1a590dbde8f1887565b604f5f501733d5f4852ab1d6394b8a1a4fcbe2d0c8b370b708b351e543c8", "/", ".qq.com"));
+            BaseService.CookiesContainer.Add(new System.Net.Cookie("webwx_auth_ticket", "CIsBEJuNjMAEGoABxZZSKYCRqZMAIZN58Fr0/w7EBylhvbLffr1x7g2hOC1kKWYIEjQ1ltWIrpkhLZHmEQsEcHlscFe4Qcc7bxzyZluIRyxzAjhDsqGFtOqK9C4H1lJX/14F8JuODyBJByc5GTsJ7b2dMNkpGlyhImyd0bJRJncI8/PEQShigcjC6xY=", "/", ".qq.com"));
+            BaseService.CookiesContainer.Add(new System.Net.Cookie("webwx_data_ticket", "gScvm3laP+YSOUjPxUGegUNE", "/", ".qq.com"));
+            WXService.WeixinRouteHost = "wx.qq.com";
 
 
         }
@@ -51,7 +53,8 @@ namespace WwChatHttpCore.HTTP.Tests
             //}
             //service.SendTextMessageToNickName("Guo Childe", "如果说呢");
             service.SendTextMessageToNickName("Guo Childe", "中文，！" + DateTime.Now);
-            
+
+            service.SendImageToNickName("Guo Childe","abc.jpg", new FileStream("Images/Penguins.jpg",FileMode.Open));
         }
     }
 }

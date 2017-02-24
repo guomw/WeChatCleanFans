@@ -10,6 +10,7 @@ using System.Net;
 using System.Web;
 using WwChatHttpCore.Objects;
 using System.Security.Cryptography;
+using System.Net.Http;
 
 namespace WwChatHttpCore.HTTP
 {
@@ -20,38 +21,82 @@ namespace WwChatHttpCore.HTTP
     {
         private static Dictionary<string, string> _syncKey = new Dictionary<string, string>();
 
-        //微信初始化url
-        private static string _init_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=";
-        //获取好友头像
-        private static string _geticon_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgeticon?username=";
-        //获取群聊（组）头像
-        private static string _getheadimg_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetheadimg?username=";
-        //获取好友列表
-        private static string _getcontact_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact";
-        //同步检查url
-        private static string _synccheck_url = "https://webpush.weixin.qq.com/cgi-bin/mmwebwx-bin/synccheck?sid={0}&uin={1}&synckey={2}&r={3}&skey={4}&deviceid={5}";
-        //同步url
-        private static string _sync_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=";
-        //发送消息url
-        private static string _sendmsg_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?sid=";
-
-        /// <summary>
-        /// 发图片消息url
-        /// </summary>
-        private static string _sendimgmsg_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&lang=zh_CN";
-
-
-        ///private static string _sendImg = "http://120.24.54.54/api/user/uploadimg/";
-
+        private static int UploadMediaSerialId = 0;
+        public static string WeixinRouteHost = "wx2.qq.com";
         /// <summary>
         /// 
         /// </summary>
-        private static string _createchatroom_url = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxcreatechatroom";
-
+        /// <returns>微信初始化url</returns>
+        private string GetURLInit()
+        {
+            return "https://" + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxinit?r=";
+        }
         /// <summary>
-        /// 上传媒体
+        /// 
         /// </summary>
-        private static string _uploadmedia = "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json";
+        /// <returns>获取好友头像</returns>
+        private string GetURLGetIcon()
+        {
+            return "https://" + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxgeticon?username=";
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns>获取群聊（组）头像</returns>
+        private string GetURLGetHeadImg()
+        {
+            return "https://" + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxgetheadimg?username=";
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns>获取好友列表</returns>
+        private string GetURLGetContact()
+        {
+            return "https://" + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxgetcontact";
+        }
+        //同步检查url
+        private static string _synccheck_url = "https://webpush.weixin.qq.com/cgi-bin/mmwebwx-bin/synccheck?sid={0}&uin={1}&synckey={2}&r={3}&skey={4}&deviceid={5}";
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns>同步url</returns>
+        private string GetURLSYNC()
+        {
+            return "https://" + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxsync?sid=";
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns>发送消息url</returns>
+        private string GetURLSendMessage()
+        {
+            return "https://" + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxsendmsg?sid=";
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns>发图片消息url</returns>
+        private string GetURLSendMediaMessage()
+        {
+            return "https://" + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&lang=zh_CN";
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns>创建群聊URL</returns>
+        private string GetURLCreateChatRoom()
+        {
+            return "https://" + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxcreatechatroom";
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns>上传媒体</returns>
+        private string GetURLUploadMedia()
+        {
+            return "https://file." + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json";
+        }
 
         private JObject initData;
         /// <summary>
@@ -67,7 +112,7 @@ namespace WwChatHttpCore.HTTP
             if (sid != null && uin != null)
             {
                 init_json = string.Format(init_json, uin.Value, sid.Value, GetDeviceID(), LoginService.SKey);
-                byte[] bytes = BaseService.SendPostRequest(_init_url+getClientMsgId() + "&pass_ticket=" + LoginService.Pass_Ticket, init_json);
+                byte[] bytes = BaseService.SendPostRequest(GetURLInit()+getClientMsgId() + "&pass_ticket=" + LoginService.Pass_Ticket, init_json);
                 string init_str = Encoding.UTF8.GetString(bytes);
 
                 JObject init_result = JsonConvert.DeserializeObject(init_str) as JObject;
@@ -85,6 +130,75 @@ namespace WwChatHttpCore.HTTP
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// 发送图片给指定昵称
+        /// </summary>
+        /// <param name="nickName">收到消息者的昵称</param>
+        /// <param name="imageName">图片名称，必须包含后缀</param>
+        /// <param name="stream">图片数据流</param>
+        public void SendImageToNickName(string nickName, string imageName, Stream stream)
+        {
+            SendImageToUserName(toUserName(nickName), imageName, stream);
+        }
+        /// <summary>
+        /// 发送图片给指定用户
+        /// </summary>
+        /// <param name="userName">指定用户名</param>
+        /// <param name="imageName">图片名称，必须包含后缀</param>
+        /// <param name="stream">图片数据流</param>
+        private void SendImageToUserName(string userName, string imageName, Stream stream)
+        {
+            String from = myUserName();
+            //Image image = Image.FromStream(stream);
+            // 判断它的图片类型，以决定mimeType
+            //String mimeType;
+            //if (System.Drawing.Imaging.ImageFormat.Jpeg.Equals(image.RawFormat))
+            String mimeType = MimeMapping.GetMimeMapping(imageName);
+            // 获取miediaId
+            
+            string id = "WU_FILE_" + (UploadMediaSerialId++);
+            
+            Cookie wdt = BaseService.GetCookie("webwx_data_ticket");
+            Cookie sid = BaseService.GetCookie("wxsid");
+            Cookie uin = BaseService.GetCookie("wxuin");
+            uploadMediaRequestModel uploadmediarequest = new uploadMediaRequestModel();
+            uploadmediarequest.BaseRequest = new WxBaseRequestModel()
+            {
+                Uin = uin.Value,
+                Sid = sid.Value,
+                Skey = LoginService.SKey,
+                DeviceID = GetDeviceID()
+            };
+            uploadmediarequest.ClientMediaId = getClientMsgId().ToString();
+            uploadmediarequest.TotalLen = stream.Length;
+            uploadmediarequest.StartPos = 0;
+            uploadmediarequest.DataLen = stream.Length;
+            uploadmediarequest.MediaType = 4;
+            uploadmediarequest.UploadType = 2;
+            uploadmediarequest.FromUserName = from;
+            uploadmediarequest.ToUserName = userName;
+            uploadmediarequest.FileMd5 = MD5(stream);
+
+            string udr = JsonConvert.SerializeObject(uploadmediarequest);
+            /// ToGMTFormat
+            MultipartFormDataContent allConent = new MultipartFormDataContent();
+            allConent.Add(new StringContent(id), "id");
+            allConent.Add(new StringContent(imageName), "name");
+            allConent.Add(new StringContent(mimeType), "type");
+            allConent.Add(new StringContent(ToGMTFormat(DateTime.Now)), "lastModifiedDate");
+            allConent.Add(new StringContent(stream.Length.ToString()), "size");
+            allConent.Add(new StringContent("1"), "chunks");
+            allConent.Add(new StringContent("0"), "chunks");
+            allConent.Add(new StringContent("pic"), "mediatype");
+            allConent.Add(new StringContent(udr), "uploadmediarequest");
+            allConent.Add(new StringContent(wdt.Value), "webwx_data_ticket");
+            allConent.Add(new StringContent(LoginService.Pass_Ticket), "pass_ticket");
+            StreamContent part = new StreamContent(stream);
+            allConent.Add(part, "filename", imageName);
+            string result = BaseService.PostAsyncAsString(GetURLUploadMedia(),allConent).Result;
+            Console.WriteLine(result);
         }
 
         /// <summary>
@@ -141,7 +255,7 @@ namespace WwChatHttpCore.HTTP
         /// <returns></returns>
         public Image GetIcon(string username)
         {
-            byte[] bytes = BaseService.SendGetRequest(_geticon_url + username);
+            byte[] bytes = BaseService.SendGetRequest(GetURLGetIcon() + username);
             if (bytes != null && bytes.Length > 0)
                 return Image.FromStream(new MemoryStream(bytes));
             return null;
@@ -153,7 +267,7 @@ namespace WwChatHttpCore.HTTP
         /// <returns></returns>
         public Image GetHeadImg(string usename)
         {
-            byte[] bytes = BaseService.SendGetRequest(_getheadimg_url + usename);
+            byte[] bytes = BaseService.SendGetRequest(GetURLGetHeadImg() + usename);
 
             return Image.FromStream(new MemoryStream(bytes));
         }
@@ -164,7 +278,7 @@ namespace WwChatHttpCore.HTTP
         /// <returns></returns>
         public JObject GetContact()
         {
-            byte[] bytes = BaseService.SendGetRequest(_getcontact_url);
+            byte[] bytes = BaseService.SendGetRequest(GetURLGetContact());
             string contact_str = Encoding.UTF8.GetString(bytes);
             contactsList = JsonConvert.DeserializeObject(contact_str) as JObject;
             return contactsList;
@@ -224,7 +338,7 @@ namespace WwChatHttpCore.HTTP
 
             if (sid != null && uin != null)
             {
-                byte[] bytes = BaseService.SendPostRequest(_sync_url + sid.Value + "&lang=zh_CN&skey=" + LoginService.SKey + "&pass_ticket=" + LoginService.Pass_Ticket, sync_json);
+                byte[] bytes = BaseService.SendPostRequest(GetURLSYNC() + sid.Value + "&lang=zh_CN&skey=" + LoginService.SKey + "&pass_ticket=" + LoginService.Pass_Ticket, sync_json);
                 string sync_str = Encoding.UTF8.GetString(bytes);
 
                 JObject sync_resul = JsonConvert.DeserializeObject(sync_str) as JObject;
@@ -278,7 +392,7 @@ namespace WwChatHttpCore.HTTP
             {
                 msg_json = string.Format(msg_json, sid.Value, uin.Value, msg, from, to, type, LoginService.SKey, DateTime.Now.Millisecond, DateTime.Now.Millisecond, DateTime.Now.Millisecond);
 
-                byte[] bytes = BaseService.SendPostRequest(_sendmsg_url + sid.Value + "&lang=zh_CN&pass_ticket=" + LoginService.Pass_Ticket, msg_json);
+                byte[] bytes = BaseService.SendPostRequest(GetURLSendMessage() + sid.Value + "&lang=zh_CN&pass_ticket=" + LoginService.Pass_Ticket, msg_json);
 
                 string send_result = Encoding.UTF8.GetString(bytes);
             }
@@ -321,7 +435,7 @@ namespace WwChatHttpCore.HTTP
             {
                 msg_json = string.Format(msg_json, GetDeviceID(), sid.Value, LoginService.SKey, uin.Value, 3, mediaId, from, getClientMsgId(), to, getClientMsgId());
 
-                byte[] bytes = BaseService.SendPostRequest(_sendimgmsg_url + "&pass_ticket=" + LoginService.Pass_Ticket, msg_json);
+                byte[] bytes = BaseService.SendPostRequest(GetURLSendMediaMessage() + "&pass_ticket=" + LoginService.Pass_Ticket, msg_json);
 
                 string send_result = Encoding.UTF8.GetString(bytes);
             }
@@ -356,7 +470,7 @@ namespace WwChatHttpCore.HTTP
             {
                 msg_json = string.Format(msg_json, sid.Value, uin.Value, from, to, LoginService.SKey, DateTime.Now.Millisecond);
                 long r = (long)(DateTime.Now.ToUniversalTime() - new System.DateTime(1970, 1, 1)).TotalMilliseconds;
-                byte[] bytes = BaseService.SendPostRequest(_createchatroom_url + "?lang=zh_CN&pass_ticket=" + LoginService.Pass_Ticket + "&r=" + r, msg_json);
+                byte[] bytes = BaseService.SendPostRequest(GetURLCreateChatRoom() + "?lang=zh_CN&pass_ticket=" + LoginService.Pass_Ticket + "&r=" + r, msg_json);
 
                 string send_result = Encoding.UTF8.GetString(bytes);
             }
@@ -386,9 +500,9 @@ namespace WwChatHttpCore.HTTP
                 DeviceID = GetDeviceID()
             };
             uploadmediarequest.ClientMediaId = getClientMsgId().ToString();
-            uploadmediarequest.TotalLen = data.Length.ToString();
-            uploadmediarequest.StartPos = "0";
-            uploadmediarequest.DataLen = data.Length.ToString();
+            uploadmediarequest.TotalLen = data.Length;
+            uploadmediarequest.StartPos = 0;
+            uploadmediarequest.DataLen = data.Length;
             uploadmediarequest.MediaType = 4;
             uploadmediarequest.UploadType = 2;
             uploadmediarequest.FromUserName = from;
@@ -407,7 +521,7 @@ namespace WwChatHttpCore.HTTP
             header.Add("webwx_data_ticket", wdt.Value);
             header.Add("pass_ticket", null);
             header.Add("filename", clientId + ".jpg");
-            byte[] bytes = BaseService.SendPostRequest(_uploadmedia, data, header);
+            byte[] bytes = BaseService.SendPostRequest(GetURLUploadMedia(), data, header);
             string send_result = Encoding.UTF8.GetString(bytes);
 
             /**
@@ -495,6 +609,15 @@ namespace WwChatHttpCore.HTTP
             MD5 md5 = new MD5CryptoServiceProvider();
             byte[] data = System.Text.Encoding.UTF8.GetBytes(str);
             byte[] result = md5.ComputeHash(data);
+            String ret = "";
+            for (int i = 0; i < result.Length; i++)
+                ret += result[i].ToString("x").PadLeft(2, '0');
+            return ret;
+        }
+        public static string MD5(Stream stream)
+        {
+            MD5 md5 = new MD5CryptoServiceProvider();
+            byte[] result = md5.ComputeHash(stream);
             String ret = "";
             for (int i = 0; i < result.Length; i++)
                 ret += result[i].ToString("x").PadLeft(2, '0');

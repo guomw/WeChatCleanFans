@@ -42,9 +42,10 @@ namespace WwChatHttpCore.HTTP.Tests
                     // name value path domain
                     foreach (Cookie c in BaseService.GetAllCookies(BaseService.CookiesContainer))
                     {   
-                        Console.WriteLine("BaseService.CookiesContainer.Add(new System.Net.Cookie(\""+c.Name+"\",\""+c.Value+"\",\""+c.Path+"\",\""+c.Domain+"\"));");
+                        Console.WriteLine("BaseService.CookiesContainer.Add(new System.Net.Cookie(\""+c.Name+"\",\""+c.Value+"\",\""+c.Path+"\",\".qq.com\"));");
                     }
                     //BaseService.CookiesContainer.Add(new System.Net.Cookie())
+                    Console.WriteLine("WXService.WeixinRouteHost = \""+WXService.WeixinRouteHost+"\";");
                     return;
                 }
             }

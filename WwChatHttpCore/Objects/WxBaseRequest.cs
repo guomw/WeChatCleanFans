@@ -34,11 +34,11 @@ namespace WwChatHttpCore.Objects
 
         public string ClientMediaId { get; set; }
 
-        public string TotalLen { get; set; }
+        public long TotalLen { get; set; }
 
-        public string StartPos { get; set; }
+        public int StartPos { get; set; }
 
-        public string DataLen { get; set; }
+        public long DataLen { get; set; }
 
         public int MediaType { get; set; }
 

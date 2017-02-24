@@ -59,6 +59,8 @@ namespace WwChatHttpCore.HTTP
             else if (login_result.Contains("=200"))  //已扫描 已登录
             {
                 string login_redirect_url = login_result.Split(new string[] { "\"" }, StringSplitOptions.None)[1];
+                Uri url = new Uri(login_redirect_url);
+                WXService.WeixinRouteHost = url.Host;
                 return login_redirect_url;
             }
             else

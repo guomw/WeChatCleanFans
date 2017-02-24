@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
 
 namespace WwChatHttpCore.HTTP
 {
@@ -105,6 +106,17 @@ namespace WwChatHttpCore.HTTP
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// 以异步方式Post一个正文到指定 URL，并且将其结果串化返回
+        /// </summary>
+        /// <param name="url">POST目标</param>
+        /// <param name="content">请求正文</param>
+        /// <returns>串化结果</returns>
+        public static Task<string> PostAsyncAsString(string url, HttpContent content)
+        {
+            return client.PostAsync(url, content).Result.Content.ReadAsStringAsync();
         }
 
         /// <summary>
