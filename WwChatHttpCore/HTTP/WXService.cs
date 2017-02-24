@@ -22,7 +22,7 @@ namespace WwChatHttpCore.HTTP
     {
         private static Dictionary<string, string> _syncKey = new Dictionary<string, string>();
 
-        private static int UploadMediaSerialId = 0;
+        public static int UploadMediaSerialId = 0;
         public static string WeixinRouteHost = "wx2.qq.com";
         /// <summary>
         /// 
@@ -181,21 +181,23 @@ namespace WwChatHttpCore.HTTP
             uploadmediarequest.FromUserName = from;
             uploadmediarequest.ToUserName = userName;
             uploadmediarequest.FileMd5 = MD5(stream);
+            stream.Position = 0;
 
             string udr = JsonConvert.SerializeObject(uploadmediarequest);
             /// ToGMTFormat
             MultipartFormDataContent allConent = new MultipartFormDataContent();
-            allConent.Add(new StringContent(id), "id");
-            allConent.Add(new StringContent(imageName), "name");
-            allConent.Add(new StringContent(mimeType), "type");
-            allConent.Add(new StringContent(ToGMTFormat(DateTime.Now)+ "(中国标准时间)", Encoding.UTF8), "lastModifiedDate");
-            allConent.Add(new StringContent(stream.Length.ToString()), "size");
             //allConent.Add(new StringContent("1"), "chunks");
             //allConent.Add(new StringContent("0"), "chunk");
-            allConent.Add(new StringContent("pic"), "mediatype");
-            allConent.Add(new StringContent(udr), "uploadmediarequest");
-            allConent.Add(new StringContent(wdt.Value), "webwx_data_ticket");
-            allConent.Add(new StringContent(LoginService.Pass_Ticket), "pass_ticket");
+
+            //allConent.Add(new StringContent(id), "id");
+            //allConent.Add(new StringContent(imageName), "name");
+            //allConent.Add(new StringContent(mimeType), "type");
+            //allConent.Add(new StringContent(ToGMTFormat(DateTime.Now) + "(中国标准时间)", Encoding.UTF8), "lastModifiedDate");
+            //allConent.Add(new StringContent(stream.Length.ToString()), "size");
+            //allConent.Add(new StringContent("pic"), "mediatype");
+            //allConent.Add(new StringContent(wdt.Value), "webwx_data_ticket");
+            //allConent.Add(new StringContent(LoginService.Pass_Ticket), "pass_ticket");
+            //allConent.Add(new StringContent(udr), "uploadmediarequest");
             StreamContent part = new StreamContent(stream);
             part.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
             allConent.Add(part, "filename", imageName);

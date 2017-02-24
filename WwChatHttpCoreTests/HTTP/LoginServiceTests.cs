@@ -10,12 +10,17 @@ using System.IO;
 using System.Diagnostics;
 using System.Threading;
 using System.Net;
+using IniParser.Model;
 
 namespace WwChatHttpCore.HTTP.Tests
 {
     [TestClass()]
     public class LoginServiceTests
     {
+        public static string INIFile()
+        {
+            return Path.GetTempPath() + "/.WXTest.ini"; 
+        }
         private LoginService service = new LoginService();
 
         [TestMethod()]
@@ -34,6 +39,12 @@ namespace WwChatHttpCore.HTTP.Tests
                 if(result is string)
                 {
                     service.GetSidUid((string)result);
+
+                    IniData data = new IniData();
+                    data.Global["_session_id"] = LoginService._session_id;
+                    data.Global["Pass_Ticket"] = LoginService.Pass_Ticket;
+                    data.Global["SKey"] = LoginService.SKey;
+                    //Path.
                     // 显示当前的所有数据
                     Console.WriteLine("LoginService._session_id = \"" + LoginService._session_id + "\";");
                     Console.WriteLine("LoginService.Pass_Ticket = \"" + LoginService.Pass_Ticket + "\";");
@@ -41,11 +52,24 @@ namespace WwChatHttpCore.HTTP.Tests
                     // 所有的cookie
                     // name value path domain
                     foreach (Cookie c in BaseService.GetAllCookies(BaseService.CookiesContainer))
-                    {   
+                    {
+                        SectionData cookiesData = new SectionData("Cookie_" + c.Name);
+                        cookiesData.Keys.AddKey("Name", c.Name);
+                        cookiesData.Keys.AddKey("Value", c.Value);
+                        cookiesData.Keys.AddKey("Path", c.Path);
+                        cookiesData.Keys.AddKey("Domain", c.Domain);
+
+                        data.Sections.Add(cookiesData);
+                        
                         Console.WriteLine("BaseService.CookiesContainer.Add(new System.Net.Cookie(\""+c.Name+"\",\""+c.Value+"\",\""+c.Path+"\",\".qq.com\"));");
+                        
                     }
                     //BaseService.CookiesContainer.Add(new System.Net.Cookie())
                     Console.WriteLine("WXService.WeixinRouteHost = \""+WXService.WeixinRouteHost+"\";");
+                    data.Global["WeixinRouteHost"] = WXService.WeixinRouteHost;
+                    
+                    new IniParser.FileIniDataParser().WriteFile(INIFile(), data);
+                    //Console.WriteLine(iniFile);
                     return;
                 }
             }
