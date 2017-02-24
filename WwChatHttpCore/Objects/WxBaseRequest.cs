@@ -17,7 +17,7 @@ namespace WwChatHttpCore.Objects
 {
     public class WxBaseRequestModel
     {
-        public string Uin { get; set; }
+        public long Uin { get; set; }
 
         public string Sid { get; set; }
 
@@ -32,7 +32,7 @@ namespace WwChatHttpCore.Objects
 
         public WxBaseRequestModel BaseRequest { get; set; }
 
-        public string ClientMediaId { get; set; }
+        public long ClientMediaId { get; set; }
 
         public long TotalLen { get; set; }
 

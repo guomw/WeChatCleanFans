@@ -11,6 +11,7 @@ using System.Web;
 using WwChatHttpCore.Objects;
 using System.Security.Cryptography;
 using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace WwChatHttpCore.HTTP
 {
@@ -166,12 +167,12 @@ namespace WwChatHttpCore.HTTP
             uploadMediaRequestModel uploadmediarequest = new uploadMediaRequestModel();
             uploadmediarequest.BaseRequest = new WxBaseRequestModel()
             {
-                Uin = uin.Value,
+                Uin = Convert.ToInt64(uin.Value),
                 Sid = sid.Value,
                 Skey = LoginService.SKey,
                 DeviceID = GetDeviceID()
             };
-            uploadmediarequest.ClientMediaId = getClientMsgId().ToString();
+            uploadmediarequest.ClientMediaId = getClientMsgId();
             uploadmediarequest.TotalLen = stream.Length;
             uploadmediarequest.StartPos = 0;
             uploadmediarequest.DataLen = stream.Length;
@@ -187,15 +188,16 @@ namespace WwChatHttpCore.HTTP
             allConent.Add(new StringContent(id), "id");
             allConent.Add(new StringContent(imageName), "name");
             allConent.Add(new StringContent(mimeType), "type");
-            allConent.Add(new StringContent(ToGMTFormat(DateTime.Now)), "lastModifiedDate");
+            allConent.Add(new StringContent(ToGMTFormat(DateTime.Now)+ "(中国标准时间)", Encoding.UTF8), "lastModifiedDate");
             allConent.Add(new StringContent(stream.Length.ToString()), "size");
-            allConent.Add(new StringContent("1"), "chunks");
-            allConent.Add(new StringContent("0"), "chunks");
+            //allConent.Add(new StringContent("1"), "chunks");
+            //allConent.Add(new StringContent("0"), "chunk");
             allConent.Add(new StringContent("pic"), "mediatype");
             allConent.Add(new StringContent(udr), "uploadmediarequest");
             allConent.Add(new StringContent(wdt.Value), "webwx_data_ticket");
             allConent.Add(new StringContent(LoginService.Pass_Ticket), "pass_ticket");
             StreamContent part = new StreamContent(stream);
+            part.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
             allConent.Add(part, "filename", imageName);
             string result = BaseService.PostAsyncAsString(GetURLUploadMedia(),allConent).Result;
             Console.WriteLine(result);
@@ -494,12 +496,12 @@ namespace WwChatHttpCore.HTTP
             uploadMediaRequestModel uploadmediarequest = new uploadMediaRequestModel();
             uploadmediarequest.BaseRequest = new WxBaseRequestModel()
             {
-                Uin = uin.Value,
+                Uin =Convert.ToInt64(uin.Value),
                 Sid = sid.Value,
                 Skey = LoginService.SKey,
                 DeviceID = GetDeviceID()
             };
-            uploadmediarequest.ClientMediaId = getClientMsgId().ToString();
+            uploadmediarequest.ClientMediaId = getClientMsgId();
             uploadmediarequest.TotalLen = data.Length;
             uploadmediarequest.StartPos = 0;
             uploadmediarequest.DataLen = data.Length;
