@@ -24,6 +24,7 @@ namespace WwChatHttpCore.HTTP
 
         public static int UploadMediaSerialId = 0;
         public static string WeixinRouteHost = "wx2.qq.com";
+        public static string DeviceID;
         /// <summary>
         /// 
         /// </summary>
@@ -96,7 +97,7 @@ namespace WwChatHttpCore.HTTP
         /// <returns>上传媒体</returns>
         private string GetURLUploadMedia()
         {
-            return "https://file." + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json";
+            return "http://file." + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json";
         }
 
         private JObject initData;
@@ -185,24 +186,38 @@ namespace WwChatHttpCore.HTTP
 
             string udr = JsonConvert.SerializeObject(uploadmediarequest);
             /// ToGMTFormat
-            MultipartFormDataContent allConent = new MultipartFormDataContent();
+            MultipartContent allConent = new MultipartContent();
             //allConent.Add(new StringContent("1"), "chunks");
             //allConent.Add(new StringContent("0"), "chunk");
 
-            //allConent.Add(new StringContent(id), "id");
-            //allConent.Add(new StringContent(imageName), "name");
-            //allConent.Add(new StringContent(mimeType), "type");
-            //allConent.Add(new StringContent(ToGMTFormat(DateTime.Now) + "(中国标准时间)", Encoding.UTF8), "lastModifiedDate");
-            //allConent.Add(new StringContent(stream.Length.ToString()), "size");
-            //allConent.Add(new StringContent("pic"), "mediatype");
-            //allConent.Add(new StringContent(wdt.Value), "webwx_data_ticket");
-            //allConent.Add(new StringContent(LoginService.Pass_Ticket), "pass_ticket");
-            //allConent.Add(new StringContent(udr), "uploadmediarequest");
+            addNormalTextContent(allConent, id, "id");
+            addNormalTextContent(allConent, imageName, "name");
+            addNormalTextContent(allConent, mimeType, "type");
+            addNormalTextContent(allConent, ToGMTFormat(DateTime.Now), "lastModifiedDate");
+            addNormalTextContent(allConent, stream.Length.ToString(), "size");
+            addNormalTextContent(allConent, "pic", "mediatype");
+
+            addNormalTextContent(allConent, wdt.Value, "webwx_data_ticket");
+            addNormalTextContent(allConent, LoginService.Pass_Ticket, "pass_ticket");
+            addNormalTextContent(allConent, udr, "uploadmediarequest");
+
             StreamContent part = new StreamContent(stream);
             part.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
-            allConent.Add(part, "filename", imageName);
+            part.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse("form-data; name=\"filename\"");
+            part.Headers.ContentDisposition.FileName = imageName;
+            allConent.Add(part);
+            //allConent.Add(part, "filename", imageName);
             string result = BaseService.PostAsyncAsString(GetURLUploadMedia(),allConent).Result;
             Console.WriteLine(result);
+        }
+
+        private void addNormalTextContent(MultipartContent allConent, string text, string name)
+        {
+            StringContent content = new StringContent(text);
+            content.Headers.ContentType = null;
+            content.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse("form-data; name=\""+name+"\"");
+            allConent.Add(content);
+            //allConent.Add(content, name);
         }
 
         /// <summary>
@@ -595,10 +610,16 @@ namespace WwChatHttpCore.HTTP
             }
             return sCode;
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns>获取device ID 在一个生命周期 它是固定的</returns>
         public static string GetDeviceID()
         {
-            return "e" + CreateCheckCodeWithNum(15);
+            if (DeviceID != null)
+                return DeviceID;
+            DeviceID = "e" + CreateCheckCodeWithNum(15);
+            return DeviceID;
         }
 
 

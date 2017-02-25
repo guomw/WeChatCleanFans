@@ -17,11 +17,12 @@ namespace WwChatHttpCore.HTTP.Tests
         public void init()
         {
             IniData data  = new IniParser.FileIniDataParser().ReadFile(LoginServiceTests.INIFile());
-            
-            LoginService._session_id = data.Global["_session_id"];
-            LoginService.Pass_Ticket = data.Global["Pass_Ticket"];
-            LoginService.SKey = data.Global["SKey"];
-            WXService.WeixinRouteHost = data.Global["WeixinRouteHost"];
+
+            SectionData commonData = data.Sections.GetSectionData("Common");
+            LoginService._session_id = commonData.Keys["_session_id"];
+            LoginService.Pass_Ticket = commonData.Keys["Pass_Ticket"];
+            LoginService.SKey = commonData.Keys["SKey"];
+            WXService.WeixinRouteHost = commonData.Keys["WeixinRouteHost"];
 
             foreach(SectionData session in data.Sections){
                 if (!session.SectionName.StartsWith("Cookie"))
@@ -53,7 +54,8 @@ namespace WwChatHttpCore.HTTP.Tests
             //    }
             //}
             //service.SendTextMessageToNickName("Guo Childe", "如果说呢");
-            service.SendTextMessageToNickName("Guo Childe", "中文，！" + DateTime.Now);
+
+            //service.SendTextMessageToNickName("Guo Childe", "中文，！" + DateTime.Now);
 
             service.SendImageToNickName("Guo Childe","well.png", new FileStream("Images/test.png",FileMode.Open));
         }

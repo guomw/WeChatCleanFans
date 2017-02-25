@@ -19,7 +19,8 @@ namespace WwChatHttpCore.HTTP.Tests
     {
         public static string INIFile()
         {
-            return Path.GetTempPath() + "/.WXTest.ini"; 
+            return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.WXTest.ini";
+            //return Path.GetTempPath() + "/.WXTest.ini"; 
         }
         private LoginService service = new LoginService();
 
@@ -41,9 +42,11 @@ namespace WwChatHttpCore.HTTP.Tests
                     service.GetSidUid((string)result);
 
                     IniData data = new IniData();
-                    data.Global["_session_id"] = LoginService._session_id;
-                    data.Global["Pass_Ticket"] = LoginService.Pass_Ticket;
-                    data.Global["SKey"] = LoginService.SKey;
+                    SectionData commonData = new SectionData("Common");
+                    commonData.Keys["_session_id"] = LoginService._session_id;
+                    commonData.Keys["Pass_Ticket"] = LoginService.Pass_Ticket;
+                    commonData.Keys["SKey"] = LoginService.SKey;
+                    
                     //Path.
                     // 显示当前的所有数据
                     Console.WriteLine("LoginService._session_id = \"" + LoginService._session_id + "\";");
@@ -66,7 +69,9 @@ namespace WwChatHttpCore.HTTP.Tests
                     }
                     //BaseService.CookiesContainer.Add(new System.Net.Cookie())
                     Console.WriteLine("WXService.WeixinRouteHost = \""+WXService.WeixinRouteHost+"\";");
-                    data.Global["WeixinRouteHost"] = WXService.WeixinRouteHost;
+                    commonData.Keys["WeixinRouteHost"] = WXService.WeixinRouteHost;
+
+                    data.Sections.Add(commonData);
                     
                     new IniParser.FileIniDataParser().WriteFile(INIFile(), data);
                     //Console.WriteLine(iniFile);

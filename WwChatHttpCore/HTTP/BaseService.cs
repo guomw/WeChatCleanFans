@@ -28,6 +28,8 @@ namespace WwChatHttpCore.HTTP
         static BaseService()
         {
             clientHandler.CookieContainer = CookiesContainer;
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
+            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(ProductHeaderValue.Parse("Mozilla/5.0")));//  (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
         }
 
         /// <summary>
@@ -116,7 +118,12 @@ namespace WwChatHttpCore.HTTP
         /// <returns>串化结果</returns>
         public static Task<string> PostAsyncAsString(string url, HttpContent content)
         {
-            return client.PostAsync(url, content).Result.Content.ReadAsStringAsync();
+            //Origin:https://wx.qq.com
+            //Referer: https://wx.qq.com/
+            HttpClient postClient = new HttpClient();
+            postClient.DefaultRequestHeaders.Add("Origin", "https://" + WXService.WeixinRouteHost);
+            postClient.DefaultRequestHeaders.Referrer = new Uri("https://" + WXService.WeixinRouteHost + "/");
+            return postClient.PostAsync(url, content).Result.Content.ReadAsStringAsync();
         }
 
         /// <summary>
