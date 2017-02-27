@@ -144,6 +144,11 @@ namespace WwChatHttpCore.HTTP
         {
             SendImageToUserName(toUserName(nickName), imageName, stream);
         }
+
+        private void SendImageToUserName(string userName, string imageName, byte[] data)
+        {
+            SendImageToUserName(userName, imageName, new MemoryStream(data));
+        }
         /// <summary>
         /// 发送图片给指定用户
         /// </summary>
