@@ -148,7 +148,8 @@ namespace WwChatHttpCore.HTTP
 
         public void SendImageToUserName(string userName, string imageName, byte[] data)
         {
-            SendImageToUserName(userName, imageName, new MemoryStream(data));
+            using (MemoryStream stream = new MemoryStream(data))
+                SendImageToUserName(userName, imageName, stream);
         }
 
         /// <summary>
