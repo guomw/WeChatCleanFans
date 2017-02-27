@@ -56,8 +56,30 @@ namespace WwChatHttpCore.HTTP.Tests
             //service.SendTextMessageToNickName("Guo Childe", "如果说呢");
 
             //service.SendTextMessageToNickName("Guo Childe", "中文，！" + DateTime.Now);
+            using (Stream str = new FileStream("Images/test.png", FileMode.Open))
+            {
+                service.SendImageToNickName("Guo Childe", "well.png",str);
+            }
 
-            service.SendImageToNickName("Guo Childe","well.png", new FileStream("Images/test.png",FileMode.Open));
+            using (Stream str = new FileStream("Images/test.png", FileMode.Open))
+            {
+                service.SendImageToNickName("Guo Childe", "well.png", str);
+            }
+
+            using (Stream str = new FileStream("Images/test.png", FileMode.Open))
+            {
+                service.SendImageToNickName("Guo Childe", "well.png", str);
+            }
+
+            using (Stream str = new FileStream("Images/test.png", FileMode.Open))
+            {
+                service.SendImageToNickName("Guo Childe", "well.png", str);
+            }
+
+            using (Stream str = new FileStream("Images/test.png", FileMode.Open))
+            {
+                service.SendImageToNickName("Guo Childe", "well.png", str);
+            }
         }
     }
 }

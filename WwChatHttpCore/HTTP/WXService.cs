@@ -97,7 +97,7 @@ namespace WwChatHttpCore.HTTP
         /// <returns>上传媒体</returns>
         private string GetURLUploadMedia()
         {
-            return "http://file." + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json";
+            return "https://file." + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json";
         }
 
         private JObject initData;
@@ -185,41 +185,80 @@ namespace WwChatHttpCore.HTTP
             stream.Position = 0;
 
             string udr = JsonConvert.SerializeObject(uploadmediarequest);
-            /// ToGMTFormat
-            MultipartContent allConent = new MultipartContent();
-            //allConent.Add(new StringContent("1"), "chunks");
-            //allConent.Add(new StringContent("0"), "chunk");
+            MemoryStream buffer = new MemoryStream();
+            StreamWriter writer = new StreamWriter(buffer);
+            // 建立边界
+            string boundary = "------"+MD5(DateTime.Now.ToString());
+            addNormalTextContent(boundary,writer, id, "id");
+            addNormalTextContent(boundary, writer, imageName, "name");
+            addNormalTextContent(boundary, writer, mimeType, "type");
+            addNormalTextContent(boundary, writer, ToGMTFormat(DateTime.Now), "lastModifiedDate");
+            addNormalTextContent(boundary, writer, stream.Length.ToString(), "size");
+            addNormalTextContent(boundary, writer, "pic", "mediatype");
 
-            addNormalTextContent(allConent, id, "id");
-            addNormalTextContent(allConent, imageName, "name");
-            addNormalTextContent(allConent, mimeType, "type");
-            addNormalTextContent(allConent, ToGMTFormat(DateTime.Now), "lastModifiedDate");
-            addNormalTextContent(allConent, stream.Length.ToString(), "size");
-            addNormalTextContent(allConent, "pic", "mediatype");
+            addNormalTextContent(boundary, writer, wdt.Value, "webwx_data_ticket");
+            addNormalTextContent(boundary, writer, LoginService.Pass_Ticket, "pass_ticket");
+            addNormalTextContent(boundary, writer, udr, "uploadmediarequest");
+            // 文件上传
+            addStreamContent(boundary, writer,buffer, stream, "filename", mimeType, imageName);
+            writer.Write("--" + boundary + "--\r\n");
+            writer.Flush();
 
-            addNormalTextContent(allConent, wdt.Value, "webwx_data_ticket");
-            addNormalTextContent(allConent, LoginService.Pass_Ticket, "pass_ticket");
-            addNormalTextContent(allConent, udr, "uploadmediarequest");
-
-            StreamContent part = new StreamContent(stream);
-            part.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
-            part.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse("form-data; name=\"filename\"");
-            part.Headers.ContentDisposition.FileName = imageName;
-            allConent.Add(part);
-            //allConent.Add(part, "filename", imageName);
-            string result = BaseService.PostAsyncAsString(GetURLUploadMedia(),allConent).Result;
-            Console.WriteLine(result);
+            buffer.Position = 0;
+            StreamContent streamContent = new StreamContent(buffer,(int)buffer.Length);
+            streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data; boundary="+boundary);
+            
+            string result = BaseService.PostAsyncAsString(GetURLUploadMedia(), streamContent).Result;
+            JObject uploadResult = JsonConvert.DeserializeObject(result) as JObject;
+            string mediaId = uploadResult["MediaId"].ToString();
+            SendPic(mediaId, from, userName);
         }
 
-        private void addNormalTextContent(MultipartContent allConent, string text, string name)
+        private void addStreamContent(string boundary, StreamWriter writer, Stream dist, Stream stream, string name,string mimeType, string fileName)
         {
-            StringContent content = new StringContent(text);
-            content.Headers.ContentType = null;
-            content.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse("form-data; name=\""+name+"\"");
-            allConent.Add(content);
-            //allConent.Add(content, name);
+            writer.Write("--");
+            writer.Write(boundary);
+            writer.Write('\r');
+            writer.Write('\n');
+            writer.Write("Content-Disposition: form-data; name=\"");
+            writer.Write(name);
+            writer.Write("\"; filename=\"");
+            writer.Write(fileName);
+            writer.Write('\"');
+            writer.Write('\r');
+            writer.Write('\n');
+            writer.Write("Content-Type: ");
+            writer.Write(mimeType);
+            writer.Write('\r');
+            writer.Write('\n');
+            writer.Write('\r');
+            writer.Write('\n');
+            writer.Flush();
+            stream.CopyTo(dist);
+            dist.Flush();
+            writer.Write('\r');
+            writer.Write('\n');
         }
 
+        private void addNormalTextContent(string boundary, StreamWriter writer, string text, string name)
+        {
+            writer.Write("--");
+            writer.Write(boundary);
+            writer.Write('\r');
+            writer.Write('\n');
+            writer.Write("Content-Disposition: form-data; name=\"");
+            writer.Write(name);
+            writer.Write('\"');
+            writer.Write('\r');
+            writer.Write('\n');
+            writer.Write('\r');
+            writer.Write('\n');
+            writer.Write(text);
+            writer.Write('\r');
+            writer.Write('\n');
+        }
+
+        
         /// <summary>
         /// 发送文本消息到指定昵称
         /// </summary>

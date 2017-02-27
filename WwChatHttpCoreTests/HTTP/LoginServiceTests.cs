@@ -40,6 +40,7 @@ namespace WwChatHttpCore.HTTP.Tests
                 if(result is string)
                 {
                     service.GetSidUid((string)result);
+                    new WXService().WxSyncCheck();
 
                     IniData data = new IniData();
                     SectionData commonData = new SectionData("Common");
