@@ -231,6 +231,7 @@ namespace WeChatCleanFans
             wFriendsList2.Items.Clear();
             if (!isStart)
             {
+                WXService wxs = new WXService();
                 string Msg = rtbContent.Text;
                 isStart = true;
                 rtbMsg.Clear();
@@ -240,24 +241,24 @@ namespace WeChatCleanFans
                 ((Action)(delegate ()
                {
                    SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 开始扫描僵尸粉..." + "\r\n");
-                   foreach (var item in contact_all)
+                   foreach (WXUser _friendUser in contact_all)
                    {
-                       WXUser _friendUser = item as WXUser;
-                       if (_friendUser.ShowName.Contains("才才"))
-                       {
-                           SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 正在扫描【" + _friendUser.ShowName + "】...");
-                           WXMsg msg = new WXMsg();
-                           msg.From = _me.UserName;
-                           msg.Msg = Msg;
-                           msg.Readed = false;
-                           msg.To = _friendUser.UserName;
-                           msg.Type = 1;
-                           msg.Time = DateTime.Now;
-                           SendResult.Add(_friendUser);
-                           _friendUser.SendMsg(msg, false);
-                           SetText("ok." + "\r\n");
-                           System.Threading.Thread.Sleep(2000);
-                       }
+                       //WXUser _friendUser = item as WXUser;
+                       SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 正在扫描【" + _friendUser.ShowName + "】...");
+                       WXMsg msg = new WXMsg();
+                       msg.From = _me.UserName;
+                       msg.Msg = Msg;
+                       msg.Readed = false;
+                       msg.To = _friendUser.UserName;
+                       msg.Type = 1;
+                       msg.Time = DateTime.Now;
+                       SendResult.Add(_friendUser);
+                       _friendUser.SendMsg(msg, false);
+                       SetText("ok." + "\r\n");
+                       System.Threading.Thread.Sleep(2000);
+
+                       //wxs.SendImageToUserName(_friendUser.UserName, "http://img01.taobaocdn.com/bao/uploaded/i1/TB1wz_KOXXXXXbBapXXXXXXXXXX_!!0-item_pic.jpg");
+
                    }
                    SetText(">>>" + DateTime.Now.ToString("HH:mm:ss") + " 扫描完成." + "\r\n");
                    isStart = false;
@@ -327,20 +328,6 @@ namespace WeChatCleanFans
         private void pbClose_Click(object sender, EventArgs e)
         {
             Application.Exit();
-        }
-
-        private void btnSendImgTest_Click(object sender, EventArgs e)
-        {
-            //if (CurrentSelected != null)
-            //{
-            //    WXService wxs = new WXService();
-            //    wxs.uploadMedia("http://img01.taobaocdn.com/bao/uploaded/i1/TB1wz_KOXXXXXbBapXXXXXXXXXX_!!0-item_pic.jpg", CurrentSelected.UserName, _me.UserName);
-            //}
-            //else
-            //{
-               
-            //}
-
         }
     }
 }

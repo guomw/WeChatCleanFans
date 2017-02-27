@@ -114,13 +114,14 @@ namespace WwChatHttpCore.HTTP
             if (sid != null && uin != null)
             {
                 init_json = string.Format(init_json, uin.Value, sid.Value, GetDeviceID(), LoginService.SKey);
-                byte[] bytes = BaseService.SendPostRequest(GetURLInit()+getClientMsgId() + "&pass_ticket=" + LoginService.Pass_Ticket, init_json);
+                byte[] bytes = BaseService.SendPostRequest(GetURLInit() + getClientMsgId() + "&pass_ticket=" + LoginService.Pass_Ticket, init_json);
                 string init_str = Encoding.UTF8.GetString(bytes);
 
                 JObject init_result = JsonConvert.DeserializeObject(init_str) as JObject;
                 if (init_result["BaseResponse"]["Ret"].ToObject<int>() > 0)
                     throw new Exceptions.LoginRequiredException();
 
+                _syncKey.Clear();
                 foreach (JObject synckey in init_result["SyncKey"]["List"])  //同步键值
                 {
                     _syncKey.Add(synckey["Key"].ToString(), synckey["Val"].ToString());
@@ -145,10 +146,31 @@ namespace WwChatHttpCore.HTTP
             SendImageToUserName(toUserName(nickName), imageName, stream);
         }
 
-        private void SendImageToUserName(string userName, string imageName, byte[] data)
+        public void SendImageToUserName(string userName, string imageName, byte[] data)
         {
             SendImageToUserName(userName, imageName, new MemoryStream(data));
         }
+
+        /// <summary>
+        /// 发图片
+        /// </summary>
+        /// <param name="userName">Name of the user.</param>
+        /// <param name="url">The URL.</param>
+        public void SendImageToUserName(string userName, string url)
+        {
+            try
+            {
+                var arr = url.Split('/');
+                var imageName = arr[arr.Length - 1];
+                var data = BaseService.SendGetRequest(url);
+                SendImageToUserName(userName, imageName, new MemoryStream(data));
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
         /// <summary>
         /// 发送图片给指定用户
         /// </summary>
@@ -164,9 +186,9 @@ namespace WwChatHttpCore.HTTP
             //if (System.Drawing.Imaging.ImageFormat.Jpeg.Equals(image.RawFormat))
             String mimeType = MimeMapping.GetMimeMapping(imageName);
             // 获取miediaId
-            
+
             string id = "WU_FILE_" + (UploadMediaSerialId++);
-            
+
             Cookie wdt = BaseService.GetCookie("webwx_data_ticket");
             Cookie sid = BaseService.GetCookie("wxsid");
             Cookie uin = BaseService.GetCookie("wxuin");
@@ -193,8 +215,8 @@ namespace WwChatHttpCore.HTTP
             MemoryStream buffer = new MemoryStream();
             StreamWriter writer = new StreamWriter(buffer);
             // 建立边界
-            string boundary = "------"+MD5(DateTime.Now.ToString());
-            addNormalTextContent(boundary,writer, id, "id");
+            string boundary = "------" + MD5(DateTime.Now.ToString());
+            addNormalTextContent(boundary, writer, id, "id");
             addNormalTextContent(boundary, writer, imageName, "name");
             addNormalTextContent(boundary, writer, mimeType, "type");
             addNormalTextContent(boundary, writer, ToGMTFormat(DateTime.Now), "lastModifiedDate");
@@ -205,21 +227,21 @@ namespace WwChatHttpCore.HTTP
             addNormalTextContent(boundary, writer, LoginService.Pass_Ticket, "pass_ticket");
             addNormalTextContent(boundary, writer, udr, "uploadmediarequest");
             // 文件上传
-            addStreamContent(boundary, writer,buffer, stream, "filename", mimeType, imageName);
+            addStreamContent(boundary, writer, buffer, stream, "filename", mimeType, imageName);
             writer.Write("--" + boundary + "--\r\n");
             writer.Flush();
 
             buffer.Position = 0;
-            StreamContent streamContent = new StreamContent(buffer,(int)buffer.Length);
-            streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data; boundary="+boundary);
-            
+            StreamContent streamContent = new StreamContent(buffer, (int)buffer.Length);
+            streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data; boundary=" + boundary);
+
             string result = BaseService.PostAsyncAsString(GetURLUploadMedia(), streamContent).Result;
             JObject uploadResult = JsonConvert.DeserializeObject(result) as JObject;
             string mediaId = uploadResult["MediaId"].ToString();
             SendPic(mediaId, from, userName);
         }
 
-        private void addStreamContent(string boundary, StreamWriter writer, Stream dist, Stream stream, string name,string mimeType, string fileName)
+        private void addStreamContent(string boundary, StreamWriter writer, Stream dist, Stream stream, string name, string mimeType, string fileName)
         {
             writer.Write("--");
             writer.Write(boundary);
@@ -263,7 +285,7 @@ namespace WwChatHttpCore.HTTP
             writer.Write('\n');
         }
 
-        
+
         /// <summary>
         /// 发送文本消息到指定昵称
         /// </summary>
@@ -387,7 +409,7 @@ namespace WwChatHttpCore.HTTP
         /// <returns></returns>
         public JObject WxSync()
         {
-            string sync_json = "{{\"BaseRequest\" : {{\"DeviceID\":\"e1615250492\",\"Sid\":\"{1}\", \"Skey\":\"{5}\", \"Uin\":\"{0}\"}},\"SyncKey\" : {{\"Count\":{2},\"List\":[{3}]}},\"rr\" :{4}}}";
+            string sync_json = "{{\"BaseRequest\" : {{\"DeviceID\":\"{6}\",\"Sid\":\"{1}\", \"Skey\":\"{5}\", \"Uin\":\"{0}\"}},\"SyncKey\" : {{\"Count\":{2},\"List\":[{3}]}},\"rr\" :{4}}}";
             Cookie sid = BaseService.GetCookie("wxsid");
             Cookie uin = BaseService.GetCookie("wxuin");
 
@@ -397,7 +419,7 @@ namespace WwChatHttpCore.HTTP
                 sync_keys += "{\"Key\":" + p.Key + ",\"Val\":" + p.Value + "},";
             }
             sync_keys = sync_keys.TrimEnd(',');
-            sync_json = string.Format(sync_json, uin.Value, sid.Value, _syncKey.Count, sync_keys, (long)(DateTime.Now.ToUniversalTime() - new System.DateTime(1970, 1, 1)).TotalMilliseconds, LoginService.SKey);
+            sync_json = string.Format(sync_json, uin.Value, sid.Value, _syncKey.Count, sync_keys, (long)(DateTime.Now.ToUniversalTime() - new System.DateTime(1970, 1, 1)).TotalMilliseconds, LoginService.SKey, GetDeviceID());
 
             if (sid != null && uin != null)
             {
@@ -432,7 +454,7 @@ namespace WwChatHttpCore.HTTP
         {
             string msg_json = "{{" +
             "\"BaseRequest\":{{" +
-                "\"DeviceID\" : \"e441551176\"," +
+                "\"DeviceID\" : \"{10}\"," +
                 "\"Sid\" : \"{0}\"," +
                 "\"Skey\" : \"{6}\"," +
                 "\"Uin\" : \"{1}\"" +
@@ -453,7 +475,7 @@ namespace WwChatHttpCore.HTTP
 
             if (sid != null && uin != null)
             {
-                msg_json = string.Format(msg_json, sid.Value, uin.Value, msg, from, to, type, LoginService.SKey, DateTime.Now.Millisecond, DateTime.Now.Millisecond, DateTime.Now.Millisecond);
+                msg_json = string.Format(msg_json, sid.Value, uin.Value, msg, from, to, type, LoginService.SKey, DateTime.Now.Millisecond, DateTime.Now.Millisecond, DateTime.Now.Millisecond, GetDeviceID());
 
                 byte[] bytes = BaseService.SendPostRequest(GetURLSendMessage() + sid.Value + "&lang=zh_CN&pass_ticket=" + LoginService.Pass_Ticket, msg_json);
 
@@ -493,7 +515,7 @@ namespace WwChatHttpCore.HTTP
 
             Cookie sid = BaseService.GetCookie("wxsid");
             Cookie uin = BaseService.GetCookie("wxuin");
-
+            
             if (sid != null && uin != null)
             {
                 msg_json = string.Format(msg_json, GetDeviceID(), sid.Value, LoginService.SKey, uin.Value, 3, mediaId, from, getClientMsgId(), to, getClientMsgId());
@@ -538,74 +560,6 @@ namespace WwChatHttpCore.HTTP
                 string send_result = Encoding.UTF8.GetString(bytes);
             }
         }
-
-
-
-        public void uploadMedia(string url, string to, string from)
-        {
-
-            Cookie wdt = BaseService.GetCookie("webwx_data_ticket");
-            Cookie sid = BaseService.GetCookie("wxsid");
-            Cookie uin = BaseService.GetCookie("wxuin");
-
-            string pPath = @"C:\Users\guomw\Pictures\1234.png";
-            FileInfo fi = new FileInfo(pPath);
-            byte[] data = imageToByteArray(pPath);
-
-            //byte[] data = BaseService.GetImageStream(url);
-
-            uploadMediaRequestModel uploadmediarequest = new uploadMediaRequestModel();
-            uploadmediarequest.BaseRequest = new WxBaseRequestModel()
-            {
-                Uin =Convert.ToInt64(uin.Value),
-                Sid = sid.Value,
-                Skey = LoginService.SKey,
-                DeviceID = GetDeviceID()
-            };
-            uploadmediarequest.ClientMediaId = getClientMsgId();
-            uploadmediarequest.TotalLen = data.Length;
-            uploadmediarequest.StartPos = 0;
-            uploadmediarequest.DataLen = data.Length;
-            uploadmediarequest.MediaType = 4;
-            uploadmediarequest.UploadType = 2;
-            uploadmediarequest.FromUserName = from;
-            uploadmediarequest.ToUserName = to;
-            uploadmediarequest.FileMd5 = MD5(Encoding.UTF8.GetString(data));
-
-            string udr = JsonConvert.SerializeObject(uploadmediarequest);
-            string clientId = "1234";// getClientMsgId().ToString();
-            WebHeaderCollection header = new WebHeaderCollection();
-            header.Add("name", clientId + ".jpg");
-            header.Add("type", "image/jpeg");
-            header.Add("lastModifiedDate", ToGMTFormat(DateTime.Now));
-            header.Add("size", data.Length.ToString());
-            header.Add("mediatype", "pic");
-            header.Add("uploadmediarequest", udr);
-            header.Add("webwx_data_ticket", wdt.Value);
-            header.Add("pass_ticket", null);
-            header.Add("filename", clientId + ".jpg");
-            byte[] bytes = BaseService.SendPostRequest(GetURLUploadMedia(), data, header);
-            string send_result = Encoding.UTF8.GetString(bytes);
-
-            /**
-             * 
-             
-
-            {
-                "BaseResponse": {
-                "Ret": 0,
-                "ErrMsg": ""
-                }
-                ,
-                "MediaId": "axxxxxxx",
-                "StartPos": 0,
-                "CDNThumbImgHeight": 0,
-                "CDNThumbImgWidth": 0
-            }
-             * 
-             * ***/
-        }
-
 
         /// <summary>
         /// 图片转为Byte字节数组

@@ -263,11 +263,7 @@ namespace WwChatHttpCore.Objects
             if (!showOnly)
             {
                 WXService wxs = new WXService();
-                wxs.SendMsg(msg.Msg, msg.From, msg.To, msg.Type);
-
-                wxs.uploadMedia("http://img01.taobaocdn.com/bao/uploaded/i1/TB1wz_KOXXXXXbBapXXXXXXXXXX_!!0-item_pic.jpg", msg.To, msg.From);
-
-                
+                wxs.SendMsg(msg.Msg, msg.From, msg.To, msg.Type);                              
             }
 
             _sentMsg.Add(msg.Time, msg);
