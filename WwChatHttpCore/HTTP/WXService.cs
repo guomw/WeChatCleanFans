@@ -167,7 +167,6 @@ namespace WwChatHttpCore.HTTP
             }
             catch (Exception)
             {
-
             }
         }
 
@@ -180,15 +179,8 @@ namespace WwChatHttpCore.HTTP
         private void SendImageToUserName(string userName, string imageName, Stream stream)
         {
             String from = myUserName();
-            //Image image = Image.FromStream(stream);
-            // 判断它的图片类型，以决定mimeType
-            //String mimeType;
-            //if (System.Drawing.Imaging.ImageFormat.Jpeg.Equals(image.RawFormat))
             String mimeType = MimeMapping.GetMimeMapping(imageName);
-            // 获取miediaId
-
             string id = "WU_FILE_" + (UploadMediaSerialId++);
-
             Cookie wdt = BaseService.GetCookie("webwx_data_ticket");
             Cookie sid = BaseService.GetCookie("wxsid");
             Cookie uin = BaseService.GetCookie("wxuin");
@@ -238,7 +230,12 @@ namespace WwChatHttpCore.HTTP
             string result = BaseService.PostAsyncAsString(GetURLUploadMedia(), streamContent).Result;
             JObject uploadResult = JsonConvert.DeserializeObject(result) as JObject;
             string mediaId = uploadResult["MediaId"].ToString();
-            SendPic(mediaId, from, userName);
+
+            if (!string.IsNullOrEmpty(mediaId))
+            {
+                SendPic(mediaId, from, userName);
+            }
+
         }
 
         private void addStreamContent(string boundary, StreamWriter writer, Stream dist, Stream stream, string name, string mimeType, string fileName)
@@ -515,7 +512,7 @@ namespace WwChatHttpCore.HTTP
 
             Cookie sid = BaseService.GetCookie("wxsid");
             Cookie uin = BaseService.GetCookie("wxuin");
-            
+
             if (sid != null && uin != null)
             {
                 msg_json = string.Format(msg_json, GetDeviceID(), sid.Value, LoginService.SKey, uin.Value, 3, mediaId, from, getClientMsgId(), to, getClientMsgId());
@@ -538,7 +535,7 @@ namespace WwChatHttpCore.HTTP
         {
             string msg_json = "{{" +
             "\"BaseRequest\":{{" +
-                "\"DeviceID\" : \"e441551176\"," +
+                "\"DeviceID\" : \"{6}\"," +
                 "\"Sid\" : \"{0}\"," +
                 "\"Skey\" : \"{4}\"," +
                 "\"Uin\" : \"{1}\"" +
@@ -553,7 +550,7 @@ namespace WwChatHttpCore.HTTP
 
             if (sid != null && uin != null)
             {
-                msg_json = string.Format(msg_json, sid.Value, uin.Value, from, to, LoginService.SKey, DateTime.Now.Millisecond);
+                msg_json = string.Format(msg_json, sid.Value, uin.Value, from, to, LoginService.SKey, DateTime.Now.Millisecond,GetDeviceID());
                 long r = (long)(DateTime.Now.ToUniversalTime() - new System.DateTime(1970, 1, 1)).TotalMilliseconds;
                 byte[] bytes = BaseService.SendPostRequest(GetURLCreateChatRoom() + "?lang=zh_CN&pass_ticket=" + LoginService.Pass_Ticket + "&r=" + r, msg_json);
 
