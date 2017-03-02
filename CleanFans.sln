@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WwChatHttpCore", "WwChatHtt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WwChatHttpCoreTests", "WwChatHttpCoreTests\WwChatHttpCoreTests.csproj", "{62F655AD-8666-4A48-A533-B20C6882D324}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Alimama", "Alimama\Alimama.csproj", "{D3221CA0-393E-4BFD-8ACE-8192D331C964}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlimamaTests", "AlimamaTests\AlimamaTests.csproj", "{E747B834-0937-456A-99A9-FF2BCF572A50}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{62F655AD-8666-4A48-A533-B20C6882D324}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62F655AD-8666-4A48-A533-B20C6882D324}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62F655AD-8666-4A48-A533-B20C6882D324}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3221CA0-393E-4BFD-8ACE-8192D331C964}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3221CA0-393E-4BFD-8ACE-8192D331C964}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3221CA0-393E-4BFD-8ACE-8192D331C964}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3221CA0-393E-4BFD-8ACE-8192D331C964}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E747B834-0937-456A-99A9-FF2BCF572A50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E747B834-0937-456A-99A9-FF2BCF572A50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E747B834-0937-456A-99A9-FF2BCF572A50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E747B834-0937-456A-99A9-FF2BCF572A50}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
