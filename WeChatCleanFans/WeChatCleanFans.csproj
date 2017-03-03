@@ -116,9 +116,9 @@
     <Content Include="Resources\male.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\WwChatHttpCore\WwChatHttpCore.csproj">
+    <ProjectReference Include="..\WwChatHttpCore\WeChatHttpCore.csproj">
       <Project>{2ceadef4-de9e-4e93-a1a1-1849d6781bd5}</Project>
-      <Name>WwChatHttpCore</Name>
+      <Name>WeChatHttpCore</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

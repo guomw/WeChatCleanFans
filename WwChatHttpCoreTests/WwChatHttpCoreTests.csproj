@@ -61,9 +61,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\WwChatHttpCore\WwChatHttpCore.csproj">
+    <ProjectReference Include="..\WwChatHttpCore\WeChatHttpCore.csproj">
       <Project>{2CEADEF4-DE9E-4E93-A1A1-1849D6781BD5}</Project>
-      <Name>WwChatHttpCore</Name>
+      <Name>WeChatHttpCore</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

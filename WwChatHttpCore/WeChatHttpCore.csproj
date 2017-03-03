@@ -7,8 +7,8 @@
     <ProjectGuid>{2CEADEF4-DE9E-4E93-A1A1-1849D6781BD5}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>WwChatHttpCore</RootNamespace>
-    <AssemblyName>WwChatHttpCore</AssemblyName>
+    <RootNamespace>WeChatHttpCore</RootNamespace>
+    <AssemblyName>WeChatHttpCore</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
