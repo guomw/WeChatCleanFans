@@ -43,7 +43,7 @@ namespace WwChatHttpCore.HTTP
             {
                 return client.GetByteArrayAsync(url).Result;
             }
-            catch
+            catch(Exception ex)
             {
                 return null;
             }

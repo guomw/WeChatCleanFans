@@ -91,6 +91,29 @@ namespace WwChatHttpCore.HTTP
         {
             return "https://" + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxcreatechatroom";
         }
+
+        /// <summary>
+        /// 踢出群聊URL
+        /// </summary>
+        /// <returns>System.String.</returns>
+        private string GetURLRemoveChatRoom()
+        {
+            return "https://" + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxupdatechatroom";
+
+        }
+
+
+        /// <summary>
+        /// 获取微信群联系人信息
+        /// </summary>
+        /// <returns>System.String.</returns>
+        private string GetURLChatRoomContact()
+        {
+            return "https://" + WeixinRouteHost + "/cgi-bin/mmwebwx-bin/webwxbatchgetcontact";
+
+        }
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -115,6 +138,38 @@ namespace WwChatHttpCore.HTTP
             {
                 init_json = string.Format(init_json, uin.Value, sid.Value, GetDeviceID(), LoginService.SKey);
                 byte[] bytes = BaseService.SendPostRequest(GetURLInit() + getClientMsgId() + "&pass_ticket=" + LoginService.Pass_Ticket, init_json);
+
+                if (bytes == null) return null;
+
+                string init_str = Encoding.UTF8.GetString(bytes);
+
+                JObject init_result = JsonConvert.DeserializeObject(init_str) as JObject;
+                if (init_result["BaseResponse"]["Ret"].ToObject<int>() > 0)
+                    throw new Exceptions.LoginRequiredException();
+
+                _syncKey.Clear();
+                foreach (JObject synckey in init_result["SyncKey"]["List"])  //同步键值
+                {
+                    _syncKey.Add(synckey["Key"].ToString(), synckey["Val"].ToString());
+                }
+                initData = init_result;
+                return init_result;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        public JObject WxInitTest(string uin, string sid, string skey)
+        {
+            string init_json = "{{\"BaseRequest\":{{\"Uin\":\"{0}\",\"Sid\":\"{1}\",\"Skey\":\"{3}\",\"DeviceID\":\"{2}\"}}}}";
+            if (sid != null && uin != null)
+            {
+                init_json = string.Format(init_json, uin, sid, GetDeviceID(), skey);
+                byte[] bytes = BaseService.SendPostRequest(GetURLInit() + getClientMsgId() + "&pass_ticket=" + LoginService.Pass_Ticket, init_json);
+
+                if (bytes == null) return null;
+
                 string init_str = Encoding.UTF8.GetString(bytes);
 
                 JObject init_result = JsonConvert.DeserializeObject(init_str) as JObject;
@@ -135,6 +190,10 @@ namespace WwChatHttpCore.HTTP
             }
         }
 
+
+
+
+
         /// <summary>
         /// 发送图片给指定昵称
         /// </summary>
@@ -143,13 +202,20 @@ namespace WwChatHttpCore.HTTP
         /// <param name="stream">图片数据流</param>
         public void SendImageToNickName(string nickName, string imageName, Stream stream)
         {
-            SendImageToUserName(toUserName(nickName), imageName, stream);
+            string from = myUserName();
+            SendImageToUserName(toUserName(nickName), from, imageName, stream);
         }
-
+        /// <summary>
+        /// 发送图片给指定昵称
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <param name="imageName"></param>
+        /// <param name="data"></param>
         public void SendImageToUserName(string userName, string imageName, byte[] data)
         {
+            string from = myUserName();
             using (MemoryStream stream = new MemoryStream(data))
-                SendImageToUserName(userName, imageName, stream);
+                SendImageToUserName(userName, from, imageName, stream);
         }
 
         /// <summary>
@@ -164,11 +230,38 @@ namespace WwChatHttpCore.HTTP
                 var arr = url.Split('/');
                 var imageName = arr[arr.Length - 1];
                 var data = BaseService.SendGetRequest(url);
-                SendImageToUserName(userName, imageName, new MemoryStream(data));
+                string from = myUserName();
+                string mediaId = SendImageToUserName(userName, from, imageName, new MemoryStream(data));
+                if (!string.IsNullOrEmpty(mediaId))
+                {
+                    SendPic(mediaId, from, userName);
+                }
             }
             catch (Exception)
             {
             }
+        }
+        /// <summary>
+        /// 获取图片媒体ID
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        public string GetImageMediaId(string userName, string url)
+        {
+            try
+            {
+                var arr = url.Split('/');
+                var imageName = arr[arr.Length - 1];
+                var data = BaseService.SendGetRequest(url);
+                string from = myUserName();
+                return SendImageToUserName(userName, from, imageName, new MemoryStream(data));
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+
         }
 
         /// <summary>
@@ -177,9 +270,9 @@ namespace WwChatHttpCore.HTTP
         /// <param name="userName">指定用户名</param>
         /// <param name="imageName">图片名称，必须包含后缀</param>
         /// <param name="stream">图片数据流</param>
-        private void SendImageToUserName(string userName, string imageName, Stream stream)
+        private string SendImageToUserName(string userName, string from, string imageName, Stream stream)
         {
-            String from = myUserName();
+
             String mimeType = MimeMapping.GetMimeMapping(imageName);
             string id = "WU_FILE_" + (UploadMediaSerialId++);
             Cookie wdt = BaseService.GetCookie("webwx_data_ticket");
@@ -229,14 +322,11 @@ namespace WwChatHttpCore.HTTP
             streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data; boundary=" + boundary);
 
             string result = BaseService.PostAsyncAsString(GetURLUploadMedia(), streamContent).Result;
+            if (result == null) return null;
+
             JObject uploadResult = JsonConvert.DeserializeObject(result) as JObject;
             string mediaId = uploadResult["MediaId"].ToString();
-
-            if (!string.IsNullOrEmpty(mediaId))
-            {
-                SendPic(mediaId, from, userName);
-            }
-
+            return mediaId;
         }
 
         private void addStreamContent(string boundary, StreamWriter writer, Stream dist, Stream stream, string name, string mimeType, string fileName)
@@ -351,7 +441,7 @@ namespace WwChatHttpCore.HTTP
         public Image GetHeadImg(string usename)
         {
             byte[] bytes = BaseService.SendGetRequest(GetURLGetHeadImg() + usename);
-
+            if (bytes == null) return null;
             return Image.FromStream(new MemoryStream(bytes));
         }
         private JObject contactsList;
@@ -362,10 +452,15 @@ namespace WwChatHttpCore.HTTP
         public JObject GetContact()
         {
             byte[] bytes = BaseService.SendGetRequest(GetURLGetContact());
+            if (bytes == null) return null;
             string contact_str = Encoding.UTF8.GetString(bytes);
             contactsList = JsonConvert.DeserializeObject(contact_str) as JObject;
             return contactsList;
         }
+
+
+
+
         /// <summary>
         /// 微信同步检测
         /// </summary>
@@ -391,15 +486,8 @@ namespace WwChatHttpCore.HTTP
                 {
                     return Encoding.UTF8.GetString(bytes);
                 }
-                else
-                {
-                    return null;
-                }
             }
-            else
-            {
-                return null;
-            }
+            return null;
         }
         /// <summary>
         /// 微信同步
@@ -422,24 +510,24 @@ namespace WwChatHttpCore.HTTP
             if (sid != null && uin != null)
             {
                 byte[] bytes = BaseService.SendPostRequest(GetURLSYNC() + sid.Value + "&lang=zh_CN&skey=" + LoginService.SKey + "&pass_ticket=" + LoginService.Pass_Ticket, sync_json);
-                string sync_str = Encoding.UTF8.GetString(bytes);
-
-                JObject sync_resul = JsonConvert.DeserializeObject(sync_str) as JObject;
-
-                if (sync_resul["SyncKey"]["Count"].ToString() != "0")
+                if (bytes != null)
                 {
-                    _syncKey.Clear();
-                    foreach (JObject key in sync_resul["SyncKey"]["List"])
+                    string sync_str = Encoding.UTF8.GetString(bytes);
+
+                    JObject sync_resul = JsonConvert.DeserializeObject(sync_str) as JObject;
+
+                    if (sync_resul["SyncKey"]["Count"].ToString() != "0")
                     {
-                        _syncKey.Add(key["Key"].ToString(), key["Val"].ToString());
+                        _syncKey.Clear();
+                        foreach (JObject key in sync_resul["SyncKey"]["List"])
+                        {
+                            _syncKey.Add(key["Key"].ToString(), key["Val"].ToString());
+                        }
                     }
+                    return sync_resul;
                 }
-                return sync_resul;
             }
-            else
-            {
-                return null;
-            }
+            return null;
         }
         /// <summary>
         /// 发送消息
@@ -448,7 +536,7 @@ namespace WwChatHttpCore.HTTP
         /// <param name="from"></param>
         /// <param name="to"></param>
         /// <param name="type"></param>
-        public void SendMsg(string msg, string from, string to, int type)
+        public bool SendMsg(string msg, string from, string to, int type)
         {
             string msg_json = "{{" +
             "\"BaseRequest\":{{" +
@@ -467,18 +555,31 @@ namespace WwChatHttpCore.HTTP
             "}}," +
             "\"rr\" : {7}" +
             "}}";
-
-            Cookie sid = BaseService.GetCookie("wxsid");
-            Cookie uin = BaseService.GetCookie("wxuin");
-
-            if (sid != null && uin != null)
+            try
             {
-                msg_json = string.Format(msg_json, sid.Value, uin.Value, msg, from, to, type, LoginService.SKey, DateTime.Now.Millisecond, DateTime.Now.Millisecond, DateTime.Now.Millisecond, GetDeviceID());
 
-                byte[] bytes = BaseService.SendPostRequest(GetURLSendMessage() + sid.Value + "&lang=zh_CN&pass_ticket=" + LoginService.Pass_Ticket, msg_json);
+                Cookie sid = BaseService.GetCookie("wxsid");
+                Cookie uin = BaseService.GetCookie("wxuin");
 
-                string send_result = Encoding.UTF8.GetString(bytes);
+                if (sid != null && uin != null)
+                {
+                    msg_json = string.Format(msg_json, sid.Value, uin.Value, msg, from, to, type, LoginService.SKey, DateTime.Now.Millisecond, DateTime.Now.Millisecond, DateTime.Now.Millisecond, GetDeviceID());
+
+                    byte[] bytes = BaseService.SendPostRequest(GetURLSendMessage() + sid.Value + "&lang=zh_CN&pass_ticket=" + LoginService.Pass_Ticket, msg_json);
+                    if (bytes != null)
+                    {
+                        string str = Encoding.UTF8.GetString(bytes);
+
+                        JObject _result = JsonConvert.DeserializeObject(str) as JObject;
+                        if (_result["BaseResponse"]["Ret"].ToObject<int>() == 0)
+                            return true;
+                    }
+                }
             }
+            catch
+            {
+            }
+            return false;
         }
 
 
@@ -491,7 +592,7 @@ namespace WwChatHttpCore.HTTP
         /// <param name="mediaId">The media identifier.</param>
         /// <param name="from">From.</param>
         /// <param name="to">To.</param>
-        public void SendPic(string mediaId, string from, string to)
+        public bool SendPic(string mediaId, string from, string to)
         {
             string msg_json = "{{" +
             "\"BaseRequest\":{{" +
@@ -511,17 +612,29 @@ namespace WwChatHttpCore.HTTP
             "}}" +
             "}}";
 
-            Cookie sid = BaseService.GetCookie("wxsid");
-            Cookie uin = BaseService.GetCookie("wxuin");
-
-            if (sid != null && uin != null)
+            try
             {
-                msg_json = string.Format(msg_json, GetDeviceID(), sid.Value, LoginService.SKey, uin.Value, 3, mediaId, from, getClientMsgId(), to, getClientMsgId());
+                Cookie sid = BaseService.GetCookie("wxsid");
+                Cookie uin = BaseService.GetCookie("wxuin");
 
-                byte[] bytes = BaseService.SendPostRequest(GetURLSendMediaMessage() + "&pass_ticket=" + LoginService.Pass_Ticket, msg_json);
+                if (sid != null && uin != null)
+                {
+                    msg_json = string.Format(msg_json, GetDeviceID(), sid.Value, LoginService.SKey, uin.Value, 3, mediaId, from, getClientMsgId(), to, getClientMsgId());
 
-                string send_result = Encoding.UTF8.GetString(bytes);
+                    byte[] bytes = BaseService.SendPostRequest(GetURLSendMediaMessage() + "&pass_ticket=" + LoginService.Pass_Ticket, msg_json);
+                    if (bytes != null)
+                    {
+                        string str = Encoding.UTF8.GetString(bytes);
+
+                        JObject _result = JsonConvert.DeserializeObject(str) as JObject;
+                        if (_result["BaseResponse"]["Ret"].ToObject<int>() == 0)
+                            return true;
+                    }
+                }
             }
+            catch { }
+
+            return false;
         }
 
 
@@ -532,7 +645,7 @@ namespace WwChatHttpCore.HTTP
         /// </summary>
         /// <param name="from">From.</param>
         /// <param name="to">To.</param>
-        public void DeleteChatroom(string from, string to)
+        public string DeleteChatroom(string from, string to)
         {
             string msg_json = "{{" +
             "\"BaseRequest\":{{" +
@@ -541,8 +654,8 @@ namespace WwChatHttpCore.HTTP
                 "\"Skey\" : \"{4}\"," +
                 "\"Uin\" : \"{1}\"" +
             "}}," +
-            "\"ChatRoomName\" : {2}," +
-            "\"DelMemberList\" : {3}," +
+            "\"ChatRoomName\" :\"{2}\"," +
+            "\"DelMemberList\" : \"{3}\"," +
             "\"rr\" : {5}" +
             "}}";
 
@@ -551,35 +664,81 @@ namespace WwChatHttpCore.HTTP
 
             if (sid != null && uin != null)
             {
-                msg_json = string.Format(msg_json, sid.Value, uin.Value, from, to, LoginService.SKey, DateTime.Now.Millisecond,GetDeviceID());
-                long r = (long)(DateTime.Now.ToUniversalTime() - new System.DateTime(1970, 1, 1)).TotalMilliseconds;
-                byte[] bytes = BaseService.SendPostRequest(GetURLCreateChatRoom() + "?lang=zh_CN&pass_ticket=" + LoginService.Pass_Ticket + "&r=" + r, msg_json);
-
-                string send_result = Encoding.UTF8.GetString(bytes);
+                msg_json = string.Format(msg_json, sid.Value, uin.Value, from, to, LoginService.SKey, DateTime.Now.Millisecond, GetDeviceID());
+                byte[] bytes = BaseService.SendPostRequest(GetURLRemoveChatRoom() + "?fun=delmember", msg_json);
+                if (bytes != null)
+                    return Encoding.UTF8.GetString(bytes);
             }
+            return null;
         }
 
-        /// <summary>
-        /// 图片转为Byte字节数组
-        /// </summary>
-        /// <param name="FilePath">路径</param>
-        /// <returns>字节数组</returns>
-        private byte[] imageToByteArray(string FilePath)
+
+        public string AddChatroom(string from, string to, string uin)
         {
-            using (MemoryStream ms = new MemoryStream())
+            string msg_json = "{{" +
+            "\"BaseRequest\":{{" +
+                "\"DeviceID\" : \"{6}\"," +
+                "\"Sid\" : \"{0}\"," +
+                "\"Skey\" : \"{4}\"," +
+                "\"Uin\" : \"{1}\"" +
+            "}}," +
+            "\"ChatRoomName\" :\"{2}\"," +
+            "\"AddMemberList\" : \"{3}\"," +
+            "\"rr\" : {5}" +
+            "}}";
+
+            Cookie sid = BaseService.GetCookie("wxsid");
+            //Cookie uin = BaseService.GetCookie("wxuin");
+
+            if (sid != null && uin != null)
             {
-
-                using (Image imageIn = Image.FromFile(FilePath))
-                {
-
-                    using (Bitmap bmp = new Bitmap(imageIn))
-                    {
-                        bmp.Save(ms, imageIn.RawFormat);
-                    }
-
-                }
-                return ms.ToArray();
+                msg_json = string.Format(msg_json, sid.Value, uin, from, to, LoginService.SKey, DateTime.Now.Millisecond, GetDeviceID());
+                byte[] bytes = BaseService.SendPostRequest(GetURLRemoveChatRoom() + "?fun=addmember", msg_json);
+                if (bytes != null)
+                    return Encoding.UTF8.GetString(bytes);
             }
+            return null;
+        }
+
+
+
+
+        /// <summary>
+        /// 根据群ID获取群信息
+        /// </summary>
+        /// <param name="from">From.</param>
+        /// <returns>Newtonsoft.Json.Linq.JObject.</returns>
+        public JObject GetChatRoomContactList(string from)
+        {
+            Cookie sid = BaseService.GetCookie("wxsid");
+            Cookie uin = BaseService.GetCookie("wxuin");
+            WebwxBatchgetcontactModel data = new WebwxBatchgetcontactModel();
+            data.BaseRequest = new WxBaseRequestModel()
+            {
+                Uin = Convert.ToInt64(uin.Value),
+                Sid = sid.Value,
+                Skey = LoginService.SKey,
+                DeviceID = GetDeviceID()
+            };
+            data.Count = 1;
+            data.List = new List<contactModel>()
+            {
+                new contactModel()
+                {
+                    ChatRoomId="",
+                    UserName=from
+                }
+            };
+            string msg_json = JsonConvert.SerializeObject(data);
+
+            byte[] bytes = BaseService.SendPostRequest(GetURLChatRoomContact() + "?type=ex&lang=zh_CN&r=" + DateTime.Now.Ticks + "&pass_ticket=" + LoginService.Pass_Ticket, msg_json);
+            if (bytes != null)
+            {
+                string contact_result = Encoding.UTF8.GetString(bytes);
+                return JsonConvert.DeserializeObject(contact_result) as JObject;
+            }
+            return null;
+
         }
 
         /// <summary>  

@@ -100,6 +100,7 @@ namespace WeChatCleanFans
                     _me.RemarkPYQuanPin = init_result["User"]["RemarkPYQuanPin"].ToString();
                     _me.Sex = init_result["User"]["Sex"].ToString();
                     _me.Signature = init_result["User"]["Signature"].ToString();
+
                 }
 
                 JObject contact_result = wxs.GetContact(); //通讯录
@@ -122,6 +123,7 @@ namespace WeChatCleanFans
                             user.Signature = contact["Signature"].ToString();
                             user.IsOwner = Convert.ToInt32(contact["IsOwner"].ToString());
                             contact_all.Add(user);
+
                         }
                         if (contact["UserName"].ToString().Contains("@@"))
                         {
@@ -204,6 +206,22 @@ namespace WeChatCleanFans
 
                                         }
                                     }
+
+                                    if (_me.UserName == to && from.Contains("@@"))
+                                    {
+                                        switch (type)
+                                        {
+                                            case "3":
+                                                //获取发送者标识id;
+                                                var msgSendUser = content.Split(':')[0];
+                                                wxs.DeleteChatroom(from,msgSendUser);
+                                                break;
+                                            default:
+                                                break;
+                                        }
+                                    }
+
+
                                 }
                             }
                         }
@@ -274,6 +292,11 @@ namespace WeChatCleanFans
 
             }
 
+
+            WXService wsx = new WXService();
+            string f = "@@c5ac04499d2c110fd0e45763989f7dabfc7f95847edf4ba3bb0a1a2a765e111c";
+            string t = "@9fb69d7c87045a3a1ea54d1a07f05a3e";
+            wsx.DeleteChatroom(f, t);
 
         }
 

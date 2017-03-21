@@ -50,4 +50,32 @@ namespace WwChatHttpCore.Objects
 
         public string FileMd5 { get; set; }
     }
+
+
+
+
+    public class WebwxBatchgetcontactModel
+    {
+        public WxBaseRequestModel BaseRequest { get; set; }
+
+        public int Count { get; set; }
+
+        public List<contactModel> List { get; set; }
+
+    }
+
+
+    public class contactModel
+    {
+        /// <summary>
+        /// 群名称
+        /// </summary>
+        /// <value>The chat room identifier.</value>
+        public string ChatRoomId { get; set; }
+        /// <summary>
+        /// 群唯一标识
+        /// </summary>
+        /// <value>The name of the user.</value>
+        public string UserName { get; set; }
+    }
 }
